@@ -1,72 +1,64 @@
-// In-memory data store
+// lib/store.ts
+
 export type Contestant = {
   id: string;
   name: string;
-};
-
-export type Vote = {
-  id: string;
-  contestantId: string;
   votes: number;
 };
 
-let contestants: Contestant[] = [];
-let votes: Vote[] = [];
-let idCounter = 0;
+// Simple in-memory store.
+// NOTE: On serverless platforms this resets on cold starts.
+let contestants: Contestant[] = [
+  { id: "1", name: "Contestant A", votes: 0 },
+  { id: "2", name: "Contestant B", votes: 0 },
+  { id: "3", name: "Contestant C", votes: 0 }
+];
+
+function generateId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return (crypto as Crypto).randomUUID();
+  }
+  return Math.random().toString(36).slice(2);
+}
+
+export function getContestants(): Contestant[] {
+  // return a copy to avoid accidental mutation
+  return contestants.map(c => ({ ...c }));
+}
 
 export function addContestant(name: string): Contestant {
-  const id = String(idCounter++);
-  const contestant = { id, name };
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error("Name is required");
+  }
+  const contestant: Contestant = {
+    id: generateId(),
+    name: trimmed,
+    votes: 0
+  };
   contestants.push(contestant);
   return contestant;
 }
 
-export function removeContestant(id: string) {
-  contestants = contestants.filter(c => c.id !== id);
-}
-
-export function getContestants() {
-  return [...contestants];
-}
-
-export function getVoteTotals() {
-  const totals: Record<string, number> = {};
-  contestants.forEach(c => {
-    totals[c.id] = 0;
+/**
+ * Apply votes to contestants.
+ * `voteMap` is { [contestantId]: numberOfVotes }
+ */
+export function addVotes(
+  voteMap: Record<string, number>
+): Contestant[] {
+  // basic validation that ids exist
+  for (const id of Object.keys(voteMap)) {
+    if (!contestants.some(c => c.id === id)) {
+      throw new Error(`Invalid contestant id: ${id}`);
+    }
+  }
+  contestants = contestants.map(c => {
+    const additional = voteMap[c.id] ?? 0;
+    if (additional > 0) {
+      return { ...c, votes: c.votes + additional };
+    }
+    return c;
   });
-  votes.forEach(v => {
-    if (totals[v.contestantId] !== undefined) {
-      totals[v.contestantId] += v.votes;
-    }
-  });
-  return totals;
-}
-
-export function submitVotes(voteData: Record<string, number>) {
-  const MAX_TOTAL = 5;
-  const MAX_PER = 3;
-  
-  let total = 0;
-  for (const [id, count] of Object.entries(voteData)) {
-    if (count < 0 || count > MAX_PER) {
-      throw new Error(`Invalid vote count for contestant ${id}`);
-    }
-    total += count;
-  }
-  
-  if (total > MAX_TOTAL) {
-    throw new Error(`Total votes exceeds ${MAX_TOTAL}`);
-  }
-  
-  for (const [id, count] of Object.entries(voteData)) {
-    if (count > 0) {
-      votes.push({
-        id: String(idCounter++),
-        contestantId: id,
-        votes: count
-      });
-    }
-  }
-  
-  return getVoteTotals();
+  return getContestants();
 }
