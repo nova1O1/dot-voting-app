@@ -1,142 +1,111 @@
-'use client';
-import { useState, useEffect } from 'react';
+"use client";
 
-type Contestant = { id: string; name: string };
+import { useEffect, useMemo, useState } from "react";
+import type { Contestant } from "@/lib/store";
+
+const MAX_TOTAL = 5;
+const MAX_PER = 3;
 
 export default function VotePage() {
   const [contestants, setContestants] = useState<Contestant[]>([]);
   const [votes, setVotes] = useState<Record<string, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const MAX_TOTAL = 5;
-  const MAX_PER = 3;
+  const [submitting, setSubmitting] = useState(false);
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    loadContestants();
+    fetch("/api/contestants")
+      .then(r => r.json())
+      .then(d => setContestants(d.contestants ?? []));
   }, []);
 
-  const loadContestants = async () => {
-    try {
-      const res = await fetch('/api/contestants');
-      const data = await res.json();
-      setContestants(data.contestants || []);
-      const initialVotes: Record<string, number> = {};
-      (data.contestants || []).forEach((c: Contestant) => {
-        initialVotes[c.id] = 0;
-      });
-      setVotes(initialVotes);
-    } catch (err) {
-      setError('Failed to load contestants');
-    } finally {
-      setLoading(false);
+  const total = useMemo(() => Object.values(votes).reduce((a, b) => a + b, 0), [votes]);
+  const remaining = MAX_TOTAL - total;
+
+  const increment = (id: string) => {
+    if (votes[id] === undefined || votes[id] < MAX_PER) {
+      if (remaining > 0) {
+        setVotes(v => ({ ...v, [id]: (v[id] ?? 0) + 1 }));
+      }
     }
   };
 
-  const currentTotal = Object.values(votes).reduce((a, b) => a + b, 0);
-  const remaining = MAX_TOTAL - currentTotal;
-
-  const handleIncrement = (id: string) => {
-    if (currentTotal < MAX_TOTAL && votes[id] < MAX_PER) {
-      setVotes(prev => ({ ...prev, [id]: prev[id] + 1 }));
+  const decrement = (id: string) => {
+    if ((votes[id] ?? 0) > 0) {
+      const newVotes = { ...votes };
+      newVotes[id]--;
+      if (newVotes[id] === 0) delete newVotes[id];
+      setVotes(newVotes);
     }
   };
 
-  const handleDecrement = (id: string) => {
-    if (votes[id] > 0) {
-      setVotes(prev => ({ ...prev, [id]: prev[id] - 1 }));
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (currentTotal === 0) {
-      setError('Please allocate at least 1 vote');
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (total === 0) {
+      setMsg("Cast at least one vote");
       return;
     }
+    setSubmitting(true);
     try {
-      const res = await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/votes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ votes })
       });
+      const data = await res.json();
       if (res.ok) {
-        setSubmitted(true);
+        setMsg("Votes submitted!");
+        setContestants(data.contestants ?? []);
+        setVotes({});
       } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to submit votes');
+        setMsg(data.message ?? "Error");
       }
-    } catch (err) {
-      setError('Error submitting votes');
+    } catch {
+      setMsg("Error submitting");
     }
+    setSubmitting(false);
   };
 
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center space-y-4">
-          <h1 className="text-4xl font-light">Thank you!</h1>
-          <p className="text-gray-600">Your votes have been recorded.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-light mb-2">Dot Voting</h1>
-        <p className="text-gray-600 mb-6">You have {MAX_TOTAL} votes. Maximum {MAX_PER} per contestant.</p>
-
-        <div className="mb-6 p-4 bg-gray-50 rounded text-sm">
-          <p>Remaining votes: <strong>{remaining}/{MAX_TOTAL}</strong></p>
-        </div>
-
-        {error && <p className="text-red-600 mb-4">{error}</p>}
-
-        {contestants.length === 0 ? (
-          <p className="text-gray-600">No contestants available yet.</p>
-        ) : (
-          <div className="space-y-4 mb-8">
-            {contestants.map((c) => (
-              <div key={c.id} className="flex items-center justify-between p-4 border border-gray-200 rounded">
-                <h2 className="text-lg font-medium">{c.name}</h2>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleDecrement(c.id)}
-                    disabled={votes[c.id] === 0}
-                    className="px-3 py-1 border rounded bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    −
-                  </button>
-                  <span className="w-8 text-center font-semibold">{votes[c.id]}</span>
-                  <button
-                    onClick={() => handleIncrement(c.id)}
-                    disabled={currentTotal >= MAX_TOTAL || votes[c.id] >= MAX_PER}
-                    className="px-3 py-1 border rounded bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <h1 className="mb-2 text-3xl font-semibold">Dot Voting</h1>
+        <p className="mb-8 text-gray-600">You have {MAX_TOTAL} votes. Max {MAX_PER} per person.</p>
+        <form onSubmit={submit} className="space-y-6 rounded-lg border border-gray-200 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Vote</h2>
+            <span className="text-sm text-gray-600">Remaining: <span className="font-bold">{remaining}</span></span>
           </div>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={currentTotal === 0 || currentTotal > MAX_TOTAL}
-          className="w-full py-3 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50 font-medium"
-        >
-          Submit Votes
-        </button>
+          {contestants.length === 0 ? (
+            <p className="text-gray-500">No contestants yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {contestants.map(c => {
+                const count = votes[c.id] ?? 0;
+                return (
+                  <div key={c.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div>
+                      <p className="font-medium">{c.name}</p>
+                      <p className="text-sm text-gray-600">Total votes: {c.votes}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => decrement(c.id)} className="rounded-full border border-gray-300 w-8 h-8 hover:bg-gray-200">−</button>
+                      <span className="w-6 text-center font-bold">{count}</span>
+                      <button type="button" onClick={() => increment(c.id)} className="rounded-full border border-gray-300 w-8 h-8 hover:bg-gray-200">+</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {msg && <p className={msg === "Votes submitted!" ? "text-green-600" : "text-red-600"}>{msg}</p>}
+          <button
+            type="submit"
+            disabled={submitting || contestants.length === 0}
+            className="w-full rounded-lg bg-black px-4 py-2 text-white hover:bg-gray-900 disabled:opacity-50"
+          >
+            {submitting ? "Submitting..." : "Submit Votes"}
+          </button>
+        </form>
       </div>
     </div>
   );
