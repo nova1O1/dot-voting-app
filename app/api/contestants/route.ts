@@ -1,38 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getContestants, addContestant, removeContestant } from '@/lib/store';
+// app/api/contestants/route.ts
+
+import { NextRequest, NextResponse } from "next/server";
+import { addContestant, getContestants } from "@/lib/store";
 
 export async function GET() {
-  try {
-    const contestants = getContestants();
-    return NextResponse.json({ contestants });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch contestants' }, { status: 500 });
-  }
+  const contestants = getContestants();
+  return NextResponse.json({ contestants });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { name } = await req.json();
-    if (!name || !name.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    const body = await req.json();
+    const name = String(body?.name ?? "").trim();
+    if (!name) {
+      return NextResponse.json(
+        { message: "Name is required" },
+        { status: 400 }
+      );
     }
-    const contestant = addContestant(name.trim());
-    return NextResponse.json({ contestant, contestants: getContestants() });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to add contestant' }, { status: 500 });
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-    }
-    removeContestant(id);
-    return NextResponse.json({ contestants: getContestants() });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to remove contestant' }, { status: 500 });
+    addContestant(name);
+    const contestants = getContestants();
+    return NextResponse.json({ contestants });
+  } catch (error: any) {
+    return NextResponse.json(
+      { message: error?.message ?? "Failed to add contestant" },
+      { status: 400 }
+    );
   }
 }
