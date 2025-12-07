@@ -25,7 +25,9 @@ export async function POST(req: NextRequest) {
       { message: error?.message ?? "Failed to add contestant" },
       { status: 400 }
     );
-    
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const body = await req.json();
@@ -46,7 +48,5 @@ export async function DELETE(req: NextRequest) {
       { message: error?.message ?? "Failed to remove contestant" },
       { status: 400 }
     );
-  }
-}
   }
 }
