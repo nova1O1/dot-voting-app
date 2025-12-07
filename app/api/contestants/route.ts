@@ -1,5 +1,4 @@
 // app/api/contestants/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { addContestant, getContestants } from "@/lib/store";
 
