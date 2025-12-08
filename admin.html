@@ -103,8 +103,6 @@
   </div>
 
 <script>
-let currentState = null;
-
 async function fetchState() {
   const res = await fetch("/api/state", {
     headers: { "Cache-Control": "no-store" }
@@ -134,7 +132,7 @@ async function removeContestant(id) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to remove contestant");
-  return data; // { ok, contestants, totals }
+  return data;
 }
 
 async function adminReset(action) {
@@ -146,7 +144,7 @@ async function adminReset(action) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Reset action failed");
-  return data; // { ok, contestants?, totals? }
+  return data;
 }
 
 function showMessage(text, type = "error") {
@@ -155,49 +153,40 @@ function showMessage(text, type = "error") {
   msg.className = type;
 }
 
-function renderFromState(state) {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
-
-  state.contestants.forEach((c) => {
-    const row = document.createElement("div");
-    row.className = "contestant";
-
-    row.innerHTML = `
-      <div>
-        <strong>${c.name}</strong><br>
-        <small>${c.subtitle || ""}</small>
-      </div>
-      <button class="remove-btn" data-id="${c.id}">Remove</button>
-    `;
-
-    list.appendChild(row);
-  });
-
-  document.querySelectorAll(".remove-btn").forEach((btn) => {
-    btn.onclick = async () => {
-      try {
-        showMessage("");
-        const data = await removeContestant(btn.dataset.id);
-        // Update local state from response -> instant UI
-        currentState = {
-          contestants: data.contestants || [],
-          totals: data.totals || {},
-          voters: currentState?.voters || {}
-        };
-        showMessage("Contestant removed.", "success");
-        renderFromState(currentState);
-      } catch (err) {
-        showMessage(err.message, "error");
-      }
-    };
-  });
-}
-
-async function initialRender() {
+async function render() {
   try {
-    currentState = await fetchState();
-    renderFromState(currentState);
+    const state = await fetchState();
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    state.contestants.forEach((c) => {
+      const row = document.createElement("div");
+      row.className = "contestant";
+
+      row.innerHTML = `
+        <div>
+          <strong>${c.name}</strong><br>
+          <small>${c.subtitle || ""}</small>
+        </div>
+        <button class="remove-btn" data-id="${c.id}">Remove</button>
+      `;
+
+      list.appendChild(row);
+    });
+
+    // Wire up remove buttons
+    document.querySelectorAll(".remove-btn").forEach((btn) => {
+      btn.onclick = async () => {
+        try {
+          showMessage("");
+          await removeContestant(btn.dataset.id);
+          showMessage("Contestant removed.", "success");
+          await render(); // always re-fetch from server
+        } catch (err) {
+          showMessage(err.message, "error");
+        }
+      };
+    });
   } catch (err) {
     showMessage(err.message, "error");
   }
@@ -214,17 +203,11 @@ document.getElementById("add").onclick = async () => {
 
   try {
     showMessage("");
-    const data = await addContestant(name, subtitle);
-    // Update local state from response
-    currentState = {
-      contestants: data.contestants || [],
-      totals: data.totals || {},
-      voters: currentState?.voters || {}
-    };
+    await addContestant(name, subtitle);
     showMessage("Contestant added!", "success");
     document.getElementById("name").value = "";
     document.getElementById("subtitle").value = "";
-    renderFromState(currentState);
+    await render(); // show what the server really has
   } catch (err) {
     showMessage(err.message, "error");
   }
@@ -233,42 +216,30 @@ document.getElementById("add").onclick = async () => {
 document.getElementById("flushIps").onclick = async () => {
   try {
     showMessage("");
-    const data = await adminReset("flushIps");
-    // Just clear voters in local state; contestants stay
-    if (currentState) {
-      currentState.voters = {};
-    }
+    await adminReset("flushIps");
     showMessage("All voter IPs have been cleared!", "success");
+    // no need to re-render list: contestants don't change
   } catch (err) {
     showMessage(err.message, "error");
   }
 };
 
 document.getElementById("flushAll").onclick = async () => {
-  if (
-    !confirm(
-      "Are you sure? This will delete ALL contestants and ALL votes (and IPs)."
-    )
-  )
-    return;
+  if (!confirm("Are you sure? This will delete ALL contestants and ALL votes (and IPs).")) return;
 
   try {
     showMessage("");
-    const data = await adminReset("flushAll");
-    currentState = {
-      contestants: data.contestants || [],
-      totals: data.totals || {},
-      voters: {}
-    };
+    await adminReset("flushAll");
     showMessage("All data has been reset!", "success");
-    renderFromState(currentState);
+    await render(); // now the list should be empty from server
   } catch (err) {
     showMessage(err.message, "error");
   }
 };
 
-initialRender();
+render();
 </script>
+
 
 </body>
 </html>

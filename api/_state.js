@@ -30,7 +30,7 @@ export async function loadState() {
 
   const blob = blobs[0];
 
-  // 🚀 IMPORTANT: bypass CDN cache so updates show instantly
+  // IMPORTANT: bypass CDN cache so we always see the latest state
   const res = await fetch(blob.url + "?v=" + Date.now());
 
   if (!res.ok) {
@@ -40,6 +40,7 @@ export async function loadState() {
   const json = await res.json().catch(() => ({}));
   return normalizeState(json);
 }
+
 
 
 
