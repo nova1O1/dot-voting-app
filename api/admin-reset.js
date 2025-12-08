@@ -43,7 +43,10 @@ export default async function handler(req, res) {
     if (action === "flushIps") {
       state.voters = {};
       await saveState(state);
-      res.status(200).json({ ok: true, message: "All voter IPs cleared." });
+      res.status(200).json({
+        ok: true,
+        message: "All voter IPs cleared."
+      });
       return;
     }
 
@@ -51,14 +54,17 @@ export default async function handler(req, res) {
       state.contestants = [];
       state.totals = {};
       state.voters = {};
-
       await saveState(state);
-      res.status(200).json({ ok: true, message: "All contestants & votes cleared." });
+      res.status(200).json({
+        ok: true,
+        message: "All contestants & votes cleared.",
+        contestants: state.contestants,
+        totals: state.totals
+      });
       return;
     }
 
     res.status(400).json({ error: "Unknown action" });
-
   } catch (err) {
     console.error("admin-reset error:", err);
     res.status(500).json({
