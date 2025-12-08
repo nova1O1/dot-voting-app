@@ -25,12 +25,13 @@ export async function loadState() {
   });
 
   if (!blobs.length) {
-    // first run: no state yet
     return normalizeState({});
   }
 
   const blob = blobs[0];
-  const res = await fetch(blob.url);
+
+  // 🚀 IMPORTANT: bypass CDN cache so updates show instantly
+  const res = await fetch(blob.url + "?v=" + Date.now());
 
   if (!res.ok) {
     throw new Error(`Failed to fetch state blob: ${res.status} ${res.statusText}`);
@@ -39,6 +40,8 @@ export async function loadState() {
   const json = await res.json().catch(() => ({}));
   return normalizeState(json);
 }
+
+
 
 export async function saveState(state) {
   // Minimal, safe options: no extra token, no cacheControlMaxAge
