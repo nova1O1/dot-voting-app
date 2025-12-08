@@ -17,7 +17,7 @@ const DEFAULT_CONTESTANTS = [
 
 function normalizeState(raw) {
   const contestants =
-  Array.isArray(raw?.contestants)
+  Array.isArray(raw?.contestants) && raw.contestants.length > 0
     ? raw.contestants
     : DEFAULT_CONTESTANTS;
 
