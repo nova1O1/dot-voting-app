@@ -113,15 +113,52 @@ console.log("[dot-poll] main.js loaded");
   }
 
   function renderContestants() {
-    grid.innerHTML = "";
+  grid.innerHTML = "";
 
-    if (!state.contestants.length) {
-      const div = document.createElement("div");
-      div.className = "subtitle";
-      div.textContent = "No contestants yet. Ask the admin to add some.";
-      grid.appendChild(div);
-      return;
-    }
+  if (!state.contestants.length) {
+    const div = document.createElement("div");
+    div.className = "subtitle";
+    div.textContent = "No contestants yet. Ask the admin to add some.";
+    grid.appendChild(div);
+    return;
+  }
+
+  state.contestants.forEach((c, index) => {
+    const article = document.createElement("article");
+    article.className = "contestant-card";
+    article.setAttribute("data-id", c.id);
+
+    // assign a distinct hue per contestant
+    const hue = (index * 72) % 360; // 5 distinct-ish colors before repeating
+    article.style.setProperty("--bubble-color", `hsl(${hue} 85% 60%)`);
+
+    article.innerHTML = `
+      <div class="contestant-main">
+        <div class="contestant-avatar"></div>
+        <div class="contestant-name-block">
+          <div class="contestant-name">${c.name}</div>
+          <div class="contestant-subtext">${c.subtitle || ""}</div>
+        </div>
+      </div>
+      <div class="vote-controls">
+        <div class="chip">
+          <span class="chip-dot"></span>
+          <span class="vote-count" data-role="count">0</span>
+          <span>/ 3</span>
+        </div>
+        <button class="btn-circle minus" data-role="minus" aria-label="Remove vote">−</button>
+        <button class="btn-circle plus" data-role="plus" aria-label="Add vote">+</button>
+      </div>
+    `;
+
+    grid.appendChild(article);
+    wireCardEvents(article, c.id);
+  });
+
+  renderCounts();
+}
+
+
 
     state.contestants.forEach((c) => {
       const article = document.createElement("article");
