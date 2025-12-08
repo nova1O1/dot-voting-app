@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dot Vote Poll</title>
+    <style>
+      :root {
+        --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%);
+        --glass-bg: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.18),
+          rgba(255, 255, 255, 0.05)
+        );
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.35);
+        --danger: #fb7185;
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.8);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          sans-serif;
+        color: var(--text-main);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .app-shell {
+        width: 100%;
+        max-width: 960px;
+        padding: 24px 16px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      @media (min-width: 768px) {
+        .app-shell {
+          padding: 32px 24px 40px;
+          gap: 20px;
+        }
+      }
+
+      .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .title {
+        font-size: 1.5rem;
+        letter-spacing: -0.03em;
+        font-weight: 650;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot-stack {
+        display: inline-flex;
+        gap: 4px;
+      }
+
+      .dot-stack span {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #f9fafb 0,
+          #38bdf8 50%,
+          #0f172a 100%
+        );
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.7);
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      .nav-link {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        transition: background 0.12s ease, border-color 0.12s ease;
+      }
+
+      .nav-link:hover {
+        background: rgba(15, 23, 42, 0.9);
+        border-color: rgba(148, 163, 184, 0.8);
+      }
+
+      .panel {
+        position: relative;
+        border-radius: 24px;
+        padding: 18px 16px 16px;
+        background: var(--glass-bg);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        overflow: hidden;
+      }
+
+      .panel::before {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background: radial-gradient(
+            circle at 0% 0%,
+            rgba(125, 211, 252, 0.22),
+            transparent 60%
+          ),
+          radial-gradient(
+            circle at 100% 0%,
+            rgba(244, 114, 182, 0.16),
+            transparent 55%
+          );
+        opacity: 0.9;
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
+
+      .panel-inner {
+        position: relative;
+        z-index: 1;
+      }
+
+      .contestant-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      @media (min-width: 640px) {
+        .contestant-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 900px) {
+        .contestant-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .contestant-card {
+        position: relative;
+        border-radius: 999px;
+        padding: 10px 12px 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: radial-gradient(
+            circle at 0% 0%,
+            rgba(248, 250, 252, 0.2),
+            transparent 55%
+          ),
+          rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        overflow: hidden;
+      }
+
+      .contestant-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 10% -20%,
+          rgba(248, 250, 252, 0.72),
+          transparent 55%
+        );
+        mix-blend-mode: soft-light;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .contestant-main {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .contestant-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: radial-gradient(
+          circle at 30% 20%,
+          #f9fafb 0,
+          #38bdf8 40%,
+          #0f172a 100%
+        );
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.9);
+        flex-shrink: 0;
+      }
+
+      .contestant-name-block {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .contestant-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .contestant-subtext {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      .vote-controls {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 7px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.8);
+      }
+
+      .chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #e5f4ff 0,
+          #38bdf8 45%,
+          #0f172a 100%
+        );
+      }
+
+      .vote-count {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.9rem;
+        min-width: 1.4em;
+        text-align: center;
+      }
+
+      .btn-circle {
+        border-radius: 999px;
+        width: 26px;
+        height: 26px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        cursor: pointer;
+        background: radial-gradient(
+          circle at 30% 20%,
+          rgba(248, 250, 252, 0.9),
+          rgba(248, 250, 252, 0.3)
+        );
+        color: #0f172a;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.8);
+        transition: transform 0.12s ease, box-shadow 0.12s ease,
+          background 0.12s ease, opacity 0.12s ease;
+      }
+
+      .btn-circle:active {
+        transform: translateY(1px) scale(0.96);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.7);
+      }
+
+      .btn-circle.minus {
+        background: radial-gradient(
+          circle at 30% 20%,
+          rgba(248, 250, 252, 0.9),
+          rgba(248, 250, 252, 0.18)
+        );
+        opacity: 0.8;
+      }
+
+      .btn-circle:disabled {
+        opacity: 0.35;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .layout-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 2px;
+      }
+
+      .summary-label {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+
+      .summary-strong {
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .bottom-bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+      }
+
+      .bottom-panel {
+        margin-top: 4px;
+        border-radius: 999px;
+        background: linear-gradient(
+          135deg,
+          rgba(15, 23, 42, 0.92),
+          rgba(15, 23, 42, 0.85)
+        );
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        box-shadow: 0 24px 40px rgba(15, 23, 42, 0.9);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      @media (max-width: 480px) {
+        .bottom-panel {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+
+      .votes-remaining {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .votes-remaining-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .votes-remaining-count {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.9rem;
+      }
+
+      .vote-spheres {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex: 1;
+      }
+
+      .sphere {
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: radial-gradient(
+          circle at 30% 20%,
+          #f9fafb 0,
+          #38bdf8 45%,
+          #0f172a 100%
+        );
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9),
+          0 10px 22px rgba(15, 23, 42, 0.95);
+        animation: float 4s ease-in-out infinite;
+      }
+
+      .sphere:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+
+      .sphere:nth-child(3) {
+        animation-delay: 0.2s;
+      }
+
+      .sphere:nth-child(4) {
+        animation-delay: 0.3s;
+      }
+
+      .sphere:nth-child(5) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+
+      .primary-button {
+        border-radius: 999px;
+        border: none;
+        padding: 8px 18px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: #0f172a;
+        background: linear-gradient(135deg, #f9fafb, #e0f2fe);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
+        transition: transform 0.12s ease, box-shadow 0.12s ease,
+          filter 0.12s ease, opacity 0.12s ease;
+        white-space: nowrap;
+      }
+
+      .primary-button span.icon {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: radial-gradient(
+          circle at 30% 20%,
+          #0f172a,
+          #38bdf8 60%,
+          #0ea5e9 100%
+        );
+      }
+
+      .primary-button:disabled {
+        opacity: 0.55;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .primary-button:not(:disabled):active {
+        transform: translateY(1px) scale(0.97);
+        box-shadow: 0 7px 18px rgba(15, 23, 42, 0.85);
+        filter: brightness(0.98);
+      }
+
+      .message {
+        margin-top: 8px;
+        font-size: 0.82rem;
+        min-height: 1.1em;
+        color: var(--text-muted);
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .message.success {
+        color: #4ade80;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="top-bar">
+        <div>
+          <div class="title">
+            Dot Poll
+            <span class="dot-stack" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </div>
+          <div class="subtitle">You have 5 dots. Max 3 per contestant.</div>
+        </div>
+        <a href="admin.html" class="nav-link">Admin</a>
+      </header>
+
+      <main class="layout-main">
+        <section class="panel">
+          <div class="panel-inner">
+            <div class="contestant-grid" id="contestant-grid"></div>
+
+            <div class="summary-row">
+              <div class="summary-label">
+                Tap + to place a vote. You can stack up to
+                <span class="summary-strong">3 dots</span> on any one bubble.
+              </div>
+              <div class="summary-label">
+                Total used:
+                <span class="summary-strong" id="total-used">0</span>
+                /
+                <span class="summary-strong">5</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="bottom-bar">
+          <div class="bottom-panel">
+            <div class="votes-remaining">
+              <div class="votes-remaining-label">Remaining votes</div>
+              <div class="votes-remaining-count">
+                <span id="votes-left">5</span>
+                / 5
+              </div>
+            </div>
+            <div
+              class="vote-spheres"
+              id="vote-spheres"
+              aria-hidden="true"
+            ></div>
+            <button class="primary-button" id="submit-btn" type="button">
+              <span class="icon"></span>
+              Submit votes
+            </button>
+          </div>
+          <div class="message" id="message" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        const STORAGE_KEY = "dotPollContestants";
+        const MAX_TOTAL = 5;
+        const MAX_PER = 3;
+
+        const grid = document.getElementById("contestant-grid");
+        const spheres = document.getElementById("vote-spheres");
+        const votesLeftEl = document.getElementById("votes-left");
+        const totalUsedEl = document.getElementById("total-used");
+        const messageEl = document.getElementById("message");
+        const submitBtn = document.getElementById("submit-btn");
+
+        if (
+          !grid ||
+          !spheres ||
+          !votesLeftEl ||
+          !totalUsedEl ||
+          !messageEl ||
+          !submitBtn
+        ) {
+          console.error("Dot poll: missing required elements.");
+          return;
+        }
+
+        function loadContestants() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              const defaults = [
+                {
+                  id: "a",
+                  name: "Team Aurora",
+                  subtitle: "Concept A",
+                  totalVotes: 0,
+                },
+                {
+                  id: "b",
+                  name: "Project Nova",
+                  subtitle: "Concept B",
+                  totalVotes: 0,
+                },
+                {
+                  id: "c",
+                  name: "Studio Echo",
+                  subtitle: "Concept C",
+                  totalVotes: 0,
+                },
+              ];
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+              return defaults;
+            }
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map((c, idx) => ({
+              id: c.id ?? String(idx),
+              name: c.name ?? "Untitled",
+              subtitle: c.subtitle ?? "",
+              totalVotes: typeof c.totalVotes === "number" ? c.totalVotes : 0,
+            }));
+          } catch (e) {
+            console.warn("Failed to parse contestants; resetting.", e);
+            localStorage.removeItem(STORAGE_KEY);
+            return loadContestants();
+          }
+        }
+
+        function saveContestants(list) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        }
+
+        const contestantsData = loadContestants();
+
+        const state = {
+          totalUsed: 0,
+          perContestant: new Map(),
+          locked: false,
+        };
+
+        contestantsData.forEach((c) => {
+          state.perContestant.set(c.id, 0);
+        });
+
+        function setMessage(text, kind) {
+          messageEl.textContent = text || "";
+          messageEl.classList.remove("error", "success");
+          if (kind === "error") messageEl.classList.add("error");
+          if (kind === "success") messageEl.classList.add("success");
+        }
+
+        function renderSpheres() {
+          spheres.innerHTML = "";
+          const remaining = MAX_TOTAL - state.totalUsed;
+          for (let i = 0; i < remaining; i++) {
+            const dot = document.createElement("div");
+            dot.className = "sphere";
+            spheres.appendChild(dot);
+          }
+        }
+
+        function renderCounts() {
+          votesLeftEl.textContent = String(MAX_TOTAL - state.totalUsed);
+          totalUsedEl.textContent = String(state.totalUsed);
+
+          const cards = grid.querySelectorAll(".contestant-card");
+          cards.forEach((card) => {
+            const id = card.getAttribute("data-id") || "";
+            const countSpan = card.querySelector('[data-role="count"]');
+            const minusBtn = card.querySelector('[data-role="minus"]');
+            const plusBtn = card.querySelector('[data-role="plus"]');
+            const value = state.perContestant.get(id) || 0;
+
+            if (countSpan) {
+              countSpan.textContent = String(value);
+            }
+
+            if (minusBtn) {
+              minusBtn.disabled = state.locked || value === 0;
+            }
+
+            if (plusBtn) {
+              plusBtn.disabled =
+                state.locked ||
+                value >= MAX_PER ||
+                state.totalUsed >= MAX_TOTAL;
+            }
+          });
+
+          renderSpheres();
+        }
+
+        function addVote(id) {
+          if (state.locked) return;
+
+          const currentForContestant = state.perContestant.get(id) || 0;
+
+          if (state.totalUsed >= MAX_TOTAL) {
+            setMessage("You’ve already used all 5 votes.", "error");
+            return;
+          }
+
+          if (currentForContestant >= MAX_PER) {
+            setMessage("You can only give 3 votes to one contestant.", "error");
+            return;
+          }
+
+          state.perContestant.set(id, currentForContestant + 1);
+          state.totalUsed += 1;
+          setMessage("");
+          renderCounts();
+        }
+
+        function removeVote(id) {
+          if (state.locked) return;
+
+          const currentForContestant = state.perContestant.get(id) || 0;
+
+          if (currentForContestant <= 0) {
+            return;
+          }
+
+          state.perContestant.set(id, currentForContestant - 1);
+          state.totalUsed -= 1;
+          setMessage("");
+          renderCounts();
+        }
+
+        function createContestantCard(c) {
+          const article = document.createElement("article");
+          article.className = "contestant-card";
+          article.setAttribute("data-id", c.id);
+
+          article.innerHTML = `
+            <div class="contestant-main">
+              <div class="contestant-avatar"></div>
+              <div class="contestant-name-block">
+                <div class="contestant-name">${c.name}</div>
+                <div class="contestant-subtext">${
+                  c.subtitle || "&nbsp;"
+                }</div>
+              </div>
+            </div>
+            <div class="vote-controls">
+              <div class="chip">
+                <span class="chip-dot"></span>
+                <span class="vote-count" data-role="count">0</span>
+                <span>/ 3</span>
+              </div>
+              <button class="btn-circle minus" data-role="minus" aria-label="Remove vote">−</button>
+              <button class="btn-circle plus" data-role="plus" aria-label="Add vote">+</button>
+            </div>
+          `;
+
+          const minusBtn = article.querySelector('[data-role="minus"]');
+          const plusBtn = article.querySelector('[data-role="plus"]');
+
+          if (minusBtn) {
+            minusBtn.addEventListener("click", function () {
+              removeVote(c.id);
+            });
+          }
+
+          if (plusBtn) {
+            plusBtn.addEventListener("click", function () {
+              addVote(c.id);
+            });
+          }
+
+          return article;
+        }
+
+        function renderContestants() {
+          grid.innerHTML = "";
+          if (contestantsData.length === 0) {
+            grid.innerHTML =
+              '<div class="summary-label">No contestants. Ask the admin to add some.</div>';
+            return;
+          }
+
+          contestantsData.forEach((c) => {
+            const card = createContestantCard(c);
+            grid.appendChild(card);
+          });
+        }
+
+        submitBtn.addEventListener("click", function () {
+          if (state.locked) return;
+
+          if (state.totalUsed === 0) {
+            setMessage("You haven’t used any votes yet.", "error");
+            return;
+          }
+
+          // Add the current selection to the stored totals
+          const stored = loadContestants();
+          const byId = new Map(stored.map((c) => [c.id, c]));
+
+          state.perContestant.forEach((value, key) => {
+            if (!value) return;
+            const c = byId.get(key);
+            if (c) {
+              c.totalVotes = (c.totalVotes || 0) + value;
+            }
+          });
+
+          saveContestants(Array.from(byId.values()));
+
+          setMessage(
+            "Your votes have been submitted. Thank you!",
+            "success"
+          );
+          state.locked = true;
+          renderCounts();
+          submitBtn.disabled = true;
+        });
+
+        // initial render
+        renderContestants();
+        renderCounts();
+        renderSpheres();
+      })();
+    </script>
+  </body>
+</html>

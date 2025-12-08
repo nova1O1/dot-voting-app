@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dot Poll – Admin</title>
+    <style>
+      :root {
+        --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%);
+        --glass-bg: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.18),
+          rgba(255, 255, 255, 0.05)
+        );
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --danger: #fb7185;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          sans-serif;
+        color: var(--text-main);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shell {
+        width: 100%;
+        max-width: 840px;
+        padding: 24px 16px 32px;
+      }
+
+      .panel {
+        border-radius: 24px;
+        padding: 18px 16px 18px;
+        background: var(--glass-bg);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+      }
+
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .title {
+        font-size: 1.4rem;
+        letter-spacing: -0.03em;
+        font-weight: 650;
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+
+      .nav-link {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+      }
+
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .field {
+        flex: 1 1 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      input {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input:focus {
+        border-color: rgba(56, 189, 248, 0.8);
+      }
+
+      .primary-button {
+        border-radius: 999px;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: #0f172a;
+        background: linear-gradient(135deg, #f9fafb, #e0f2fe);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
+        white-space: nowrap;
+      }
+
+      .primary-button:disabled {
+        opacity: 0.6;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .list {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 360px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .item {
+        border-radius: 18px;
+        padding: 8px 10px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .item-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .item-sub {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      .item-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .badge {
+        font-size: 0.78rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.8);
+        background: rgba(15, 23, 42, 0.9);
+      }
+
+      .danger-button {
+        border-radius: 999px;
+        border: none;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        background: rgba(248, 113, 113, 0.18);
+        color: var(--danger);
+        border: 1px solid rgba(248, 113, 113, 0.7);
+      }
+
+      .message {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        min-height: 1.1em;
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .message.success {
+        color: #4ade80;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="panel">
+        <div class="top-row">
+          <div class="title">Dot Poll · Admin</div>
+          <a href="index.html" class="nav-link">Back to voting</a>
+        </div>
+        <div class="subtitle">
+          Manage contestants and see the total votes that have been submitted
+          from the public voting page.
+        </div>
+
+        <form id="add-form" class="form-row" autocomplete="off">
+          <div class="field">
+            <label for="name-input">Contestant name</label>
+            <input
+              id="name-input"
+              type="text"
+              placeholder="e.g. Team Aurora"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="subtitle-input">Subtitle (optional)</label>
+            <input
+              id="subtitle-input"
+              type="text"
+              placeholder="e.g. Concept A"
+            />
+          </div>
+          <div class="field" style="flex:0 0 auto; align-self:flex-end;">
+            <button class="primary-button" type="submit">
+              <span>＋</span> Add contestant
+            </button>
+          </div>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="list" class="list"></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const STORAGE_KEY = "dotPollContestants";
+
+        const listEl = document.getElementById("list");
+        const formEl = document.getElementById("add-form");
+        const nameInput = document.getElementById("name-input");
+        const subtitleInput = document.getElementById("subtitle-input");
+        const messageEl = document.getElementById("message");
+
+        function setMessage(text, kind) {
+          messageEl.textContent = text || "";
+          messageEl.classList.remove("error", "success");
+          if (kind === "error") messageEl.classList.add("error");
+          if (kind === "success") messageEl.classList.add("success");
+        }
+
+        function loadContestants() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map((c, idx) => ({
+              id: c.id ?? String(idx),
+              name: c.name ?? "Untitled",
+              subtitle: c.subtitle ?? "",
+              totalVotes: typeof c.totalVotes === "number" ? c.totalVotes : 0,
+            }));
+          } catch (e) {
+            console.warn("Failed to parse contestants; resetting.", e);
+            localStorage.removeItem(STORAGE_KEY);
+            return [];
+          }
+        }
+
+        function saveContestants(list) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        }
+
+        function render() {
+          const data = loadContestants();
+          listEl.innerHTML = "";
+
+          if (data.length === 0) {
+            listEl.innerHTML =
+              '<div class="item"><div class="item-main"><div class="item-name">No contestants yet.</div><div class="item-sub">Add some above and they will appear on the voting page.</div></div></div>';
+            return;
+          }
+
+          data.forEach((c) => {
+            const div = document.createElement("div");
+            div.className = "item";
+            div.innerHTML = `
+              <div class="item-main">
+                <div class="item-name">${c.name}</div>
+                <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
+              </div>
+              <div class="item-meta">
+                <span class="badge">Total votes: ${
+                  c.totalVotes || 0
+                }</span>
+                <button class="danger-button" type="button">Remove</button>
+              </div>
+            `;
+
+            const removeBtn = div.querySelector("button.danger-button");
+            if (removeBtn) {
+              removeBtn.addEventListener("click", function () {
+                const confirmed = confirm(
+                  `Remove "${c.name}" and all of its votes?`
+                );
+                if (!confirmed) return;
+                const current = loadContestants();
+                const next = current.filter((x) => x.id !== c.id);
+                saveContestants(next);
+                render();
+                setMessage(`Removed "${c.name}".`, "success");
+              });
+            }
+
+            listEl.appendChild(div);
+          });
+        }
+
+        formEl.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const name = nameInput.value.trim();
+          const subtitle = subtitleInput.value.trim();
+
+          if (!name) {
+            setMessage("Name is required.", "error");
+            return;
+          }
+
+          const current = loadContestants();
+          const newItem = {
+            id: "c_" + Date.now().toString(36) + "_" + current.length,
+            name,
+            subtitle,
+            totalVotes: 0,
+          };
+
+          current.push(newItem);
+          saveContestants(current);
+          nameInput.value = "";
+          subtitleInput.value = "";
+          render();
+          setMessage(`Added "${newItem.name}".`, "success");
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>
