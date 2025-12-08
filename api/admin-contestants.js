@@ -1,4 +1,9 @@
+
 // api/admin-contestants.js
+export const config = {
+  runtime: "nodejs"
+};
+
 import { loadState, saveState } from "./_state.js";
 
 async function readJson(req) {

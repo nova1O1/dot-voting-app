@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "nodejs"
+};
+
 import { loadState } from "./_state.js";
 
 export default async function handler(req, res) {

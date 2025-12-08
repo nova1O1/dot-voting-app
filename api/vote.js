@@ -1,4 +1,8 @@
 // api/vote.js
+export const config = {
+  runtime: "nodejs"
+};
+
 import { loadState, saveState, getClientIp, hashIp } from "./_state.js";
 
 const MAX_TOTAL = 5;
