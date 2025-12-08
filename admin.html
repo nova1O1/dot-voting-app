@@ -120,7 +120,7 @@ async function addContestant(name, subtitle) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to add contestant");
-  return data; // { ok, contestants, totals }
+  return data;
 }
 
 async function removeContestant(id) {
@@ -174,14 +174,13 @@ async function render() {
       list.appendChild(row);
     });
 
-    // Wire up remove buttons
     document.querySelectorAll(".remove-btn").forEach((btn) => {
       btn.onclick = async () => {
         try {
           showMessage("");
           await removeContestant(btn.dataset.id);
           showMessage("Contestant removed.", "success");
-          await render(); // always re-fetch from server
+          await render(); // 🔁 always re-fetch from server
         } catch (err) {
           showMessage(err.message, "error");
         }
@@ -207,7 +206,7 @@ document.getElementById("add").onclick = async () => {
     showMessage("Contestant added!", "success");
     document.getElementById("name").value = "";
     document.getElementById("subtitle").value = "";
-    await render(); // show what the server really has
+    await render(); // 🔁 show whatever is actually stored
   } catch (err) {
     showMessage(err.message, "error");
   }
@@ -218,7 +217,7 @@ document.getElementById("flushIps").onclick = async () => {
     showMessage("");
     await adminReset("flushIps");
     showMessage("All voter IPs have been cleared!", "success");
-    // no need to re-render list: contestants don't change
+    // contestants list doesn't change, no need to re-render
   } catch (err) {
     showMessage(err.message, "error");
   }
@@ -231,7 +230,7 @@ document.getElementById("flushAll").onclick = async () => {
     showMessage("");
     await adminReset("flushAll");
     showMessage("All data has been reset!", "success");
-    await render(); // now the list should be empty from server
+    await render(); // list should now be empty from server
   } catch (err) {
     showMessage(err.message, "error");
   }
@@ -239,6 +238,7 @@ document.getElementById("flushAll").onclick = async () => {
 
 render();
 </script>
+
 
 
 </body>

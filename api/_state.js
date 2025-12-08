@@ -18,6 +18,7 @@ function normalizeState(raw) {
   };
 }
 
+// api/_state.js (only the loadState part shown)
 export async function loadState() {
   const { blobs } = await list({
     prefix: STATE_PATH,
@@ -25,12 +26,13 @@ export async function loadState() {
   });
 
   if (!blobs.length) {
+    // first run: no state yet
     return normalizeState({});
   }
 
   const blob = blobs[0];
 
-  // IMPORTANT: bypass CDN cache so we always see the latest state
+  // 🚀 Bypass Blob CDN cache – always get the latest JSON
   const res = await fetch(blob.url + "?v=" + Date.now());
 
   if (!res.ok) {
@@ -40,6 +42,7 @@ export async function loadState() {
   const json = await res.json().catch(() => ({}));
   return normalizeState(json);
 }
+
 
 
 
