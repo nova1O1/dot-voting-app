@@ -17,9 +17,10 @@ const DEFAULT_CONTESTANTS = [
 
 function normalizeState(raw) {
   const contestants =
-    Array.isArray(raw?.contestants) && raw.contestants.length
-      ? raw.contestants
-      : DEFAULT_CONTESTANTS;
+  Array.isArray(raw?.contestants)
+    ? raw.contestants
+    : DEFAULT_CONTESTANTS;
+
 
   const totals =
     raw?.totals && typeof raw.totals === "object" ? raw.totals : {};
