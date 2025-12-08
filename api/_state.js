@@ -9,7 +9,11 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_KV_REST_API_TOKEN,
 });
 
-const DEFAULT_CONTESTANTS = []; // or just delete this constant entirely
+const DEFAULT_CONTESTANTS = [
+  { id: "a", name: "Team Aurora", subtitle: "Concept A" },
+  { id: "b", name: "Project Nova", subtitle: "Concept B" },
+  { id: "c", name: "Studio Echo", subtitle: "Concept C" },
+];
 
 function normalizeState(raw) {
   const contestants =
