@@ -1,13 +1,14 @@
 {
-  "name": "dot-poll-vercel-blobs",
+  "name": "dot-poll-vanilla-kv",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "vercel dev"
+    "dev": "echo \"Use 'vercel dev' directly\"",
+    "start": "echo \"Use 'vercel dev' directly\"",
+    "build": "echo \"No build step\""
   },
   "dependencies": {
-    "@vercel/blob": "^0.23.0"
+    "@upstash/redis": "^1.35.7"
   }
 }

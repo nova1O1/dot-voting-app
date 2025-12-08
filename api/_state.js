@@ -1,63 +1,50 @@
-// api/_state.js
 import crypto from "crypto";
-import { list, put } from "@vercel/blob";
+import { Redis } from "@upstash/redis";
 
-export const STATE_PATH = "poll/state.json";
+export const STATE_KEY = "dot-poll:state";
+
+// Use the env vars that Vercel actually created for you
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_KV_REST_API_URL,
+  token: process.env.UPSTASH_REDIS_KV_REST_API_TOKEN,
+});
+
+const DEFAULT_CONTESTANTS = [
+  { id: "a", name: "Team Aurora", subtitle: "Concept A" },
+  { id: "b", name: "Project Nova", subtitle: "Concept B" },
+  { id: "c", name: "Studio Echo", subtitle: "Concept C" },
+];
 
 function normalizeState(raw) {
-  return {
-    contestants: Array.isArray(raw?.contestants)
+  const contestants =
+    Array.isArray(raw?.contestants) && raw.contestants.length
       ? raw.contestants
-      : [
-          { id: "a", name: "Team Aurora", subtitle: "Concept A" },
-          { id: "b", name: "Project Nova", subtitle: "Concept B" },
-          { id: "c", name: "Studio Echo", subtitle: "Concept C" }
-        ],
-    totals: raw?.totals || {},
-    voters: raw?.voters || {}
-  };
-}
+      : DEFAULT_CONTESTANTS;
 
-// api/_state.js (only the loadState part shown)
-export async function loadState() {
-  const { blobs } = await list({
-    prefix: STATE_PATH,
-    limit: 1
+  const totals =
+    raw?.totals && typeof raw.totals === "object" ? raw.totals : {};
+  const voters =
+    raw?.voters && typeof raw.voters === "object" ? raw.voters : {};
+
+  contestants.forEach((c) => {
+    if (totals[c.id] == null) totals[c.id] = 0;
   });
 
-  if (!blobs.length) {
-    // first run: no state yet
-    return normalizeState({});
-  }
-
-  const blob = blobs[0];
-
-  // 🚀 Bypass Blob CDN cache – always get the latest JSON
-  const res = await fetch(blob.url + "?v=" + Date.now());
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch state blob: ${res.status} ${res.statusText}`);
-  }
-
-  const json = await res.json().catch(() => ({}));
-  return normalizeState(json);
+  return { contestants, totals, voters };
 }
 
-
-
-
+export async function loadState() {
+  const raw = await redis.get(STATE_KEY);
+  if (!raw) {
+    const initial = normalizeState({});
+    await redis.set(STATE_KEY, initial);
+    return initial;
+  }
+  return normalizeState(raw);
+}
 
 export async function saveState(state) {
-  // Minimal, safe options: no extra token, no cacheControlMaxAge
-  await put(
-    STATE_PATH,
-    JSON.stringify(state),
-    {
-      access: "public",
-      addRandomSuffix: false,
-      contentType: "application/json"
-    }
-  );
+  await redis.set(STATE_KEY, state);
 }
 
 export function getClientIp(req) {

@@ -5,29 +5,6 @@ export const config = {
 
 import { loadState, saveState, getClientIp, hashIp } from "./_state.js";
 
-const MAX_TOTAL = 5;
-const MAX_PER = 3;
-
-// Read JSON body safely
-async function readJson(req) {
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => {
-      data += chunk;
-    });
-    req.on("end", () => {
-      if (!data) return resolve({});
-      try {
-        const json = JSON.parse(data);
-        resolve(json || {});
-      } catch (err) {
-        reject(err);
-      }
-    });
-    req.on("error", (err) => reject(err));
-  });
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -35,66 +12,60 @@ export default async function handler(req, res) {
   }
 
   try {
+    const body = req.body || {};
+    const votes = body.votes || {};
+
+    const state = await loadState();
     const ip = getClientIp(req);
     const ipHash = hashIp(ip);
 
-    let body = {};
-    try {
-      body = await readJson(req);
-    } catch (err) {
-      res.status(400).json({ error: "Invalid JSON body" });
+    if (state.voters[ipHash]) {
+      res.status(403).json({ ok: false, error: "You have already voted." });
       return;
     }
 
-    const allocations = body.allocations || {};
-    const votesArray = Object.entries(allocations).map(([id, v]) => ({
-      id,
-      votes: Number(v) || 0
-    }));
-
-    if (!votesArray.length) {
-      res.status(400).json({ error: "No votes submitted." });
-      return;
-    }
-
-    const totalVotes = votesArray.reduce((sum, x) => sum + x.votes, 0);
-    if (totalVotes <= 0 || totalVotes > MAX_TOTAL) {
-      res.status(400).json({ error: "You must use 1–5 votes." });
-      return;
-    }
-
-    for (const { id, votes } of votesArray) {
-      if (votes < 0 || votes > MAX_PER) {
-        res.status(400).json({ error: "Max 3 votes per contestant." });
+    let total = 0;
+    for (const [id, count] of Object.entries(votes)) {
+      const n = Number(count) || 0;
+      if (n < 0) {
+        res.status(400).json({ ok: false, error: "Invalid vote counts." });
         return;
       }
+      if (n > 0) {
+        const exists = state.contestants.some((c) => c.id === id);
+        if (!exists) {
+          res.status(400).json({ ok: false, error: "Invalid contestant id." });
+          return;
+        }
+      }
+      if (n > 3) {
+        res
+          .status(400)
+          .json({ ok: false, error: "Max 3 votes per contestant." });
+        return;
+      }
+      total += n;
     }
 
-    const state = await loadState();
-
-    if (state.voters && state.voters[ipHash]) {
-      res.status(403).json({
-        error: "You have already voted from this device/IP."
-      });
+    if (total === 0) {
+      res.status(400).json({ ok: false, error: "No votes submitted." });
+      return;
+    }
+    if (total > 5) {
+      res
+        .status(400)
+        .json({ ok: false, error: "You can only use 5 votes total." });
       return;
     }
 
-    const validIds = new Set(state.contestants.map((c) => c.id));
-    for (const { id } of votesArray) {
-      if (!validIds.has(id)) {
-        res.status(400).json({ error: "Unknown contestant: " + id });
-        return;
-      }
+    for (const [id, count] of Object.entries(votes)) {
+      const n = Number(count) || 0;
+      if (!n) continue;
+      if (state.totals[id] == null) state.totals[id] = 0;
+      state.totals[id] += n;
     }
 
-    if (!state.totals) state.totals = {};
-    for (const { id, votes } of votesArray) {
-      if (!votes) continue;
-      state.totals[id] = (state.totals[id] || 0) + votes;
-    }
-
-    if (!state.voters) state.voters = {};
-    state.voters[ipHash] = true;
+    state.voters[ipHash] = new Date().toISOString();
 
     await saveState(state);
 
@@ -105,6 +76,7 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("api/vote error:", err);
     res.status(500).json({
+      ok: false,
       error: "Internal error while submitting votes.",
       detail: String(err?.message || err)
     });

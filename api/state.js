@@ -14,7 +14,6 @@ export default async function handler(req, res) {
   try {
     const state = await loadState();
 
-    // 🔥 absolutely disable caching of the API response itself
     res.setHeader(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, proxy-revalidate"

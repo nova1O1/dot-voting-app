@@ -1,245 +1,447 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dot Poll Admin</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      padding: 40px;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 20px;
-    }
-    .panel {
-      background: rgba(255,255,255,0.08);
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 600px;
-    }
-    .input-row, .button-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    input {
-      flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #334155;
-      background: #1e293b;
-      color: white;
-    }
-    button {
-      padding: 10px 16px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .add-btn {
-      background: #38bdf8;
-      color: #0f172a;
-    }
-    .reset-btn {
-      background: #f59e0b;
-      color: #0f172a;
-    }
-    .flush-btn {
-      background: #ef4444;
-      color: white;
-    }
-    .contestant {
-      background: rgba(255,255,255,0.05);
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .remove-btn {
-      background: #ef4444;
-      color: white;
-    }
-    .error {
-      margin-top: 10px;
-      color: #f87171;
-    }
-    .success {
-      margin-top: 10px;
-      color: #4ade80;
-    }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dot Poll – Admin</title>
+    <style>
+      :root {
+        --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%);
+        --glass-bg: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.18),
+          rgba(255, 255, 255, 0.05)
+        );
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --danger: #fb7185;
+      }
 
-  <h1>Dot Poll Admin</h1>
+      * {
+        box-sizing: border-box;
+      }
 
-  <div class="panel">
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          sans-serif;
+        color: var(--text-main);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-    <!-- ADD CONTESTANT -->
-    <div class="input-row">
-      <input type="text" id="name" placeholder="Contestant name" />
-      <input type="text" id="subtitle" placeholder="Subtitle (optional)" />
-      <button class="add-btn" id="add">Add</button>
-    </div>
+      .shell {
+        width: 100%;
+        max-width: 840px;
+        padding: 24px 16px 32px;
+      }
 
-    <!-- NEW RESET BUTTONS -->
-    <div class="button-row">
-      <button class="reset-btn" id="flushIps">Flush IPs</button>
-      <button class="flush-btn" id="flushAll">Flush ALL</button>
-    </div>
+      .panel {
+        border-radius: 24px;
+        padding: 18px 16px 18px;
+        background: var(--glass-bg);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+      }
 
-    <div id="message"></div>
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
 
-    <h2>Contestants</h2>
-    <div id="list"></div>
+      .title {
+        font-size: 1.4rem;
+        letter-spacing: -0.03em;
+        font-weight: 650;
+      }
 
-  </div>
+      .subtitle {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
 
-<script>
-async function fetchState() {
-  const res = await fetch("/api/state", {
-    headers: { "Cache-Control": "no-store" }
-  });
-  if (!res.ok) throw new Error("Failed to load state");
-  return res.json();
-}
+      .nav-link {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+      }
 
-async function addContestant(name, subtitle) {
-  const res = await fetch("/api/admin-contestants", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, subtitle })
-  });
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to add contestant");
-  return data;
-}
+      .field {
+        flex: 1 1 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
 
-async function removeContestant(id) {
-  const res = await fetch("/api/admin-contestants", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id })
-  });
+      label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to remove contestant");
-  return data;
-}
+      input {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text-main);
+        outline: none;
+      }
 
-async function adminReset(action) {
-  const res = await fetch("/api/admin-reset", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action })
-  });
+      input:focus {
+        border-color: rgba(56, 189, 248, 0.8);
+      }
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Reset action failed");
-  return data;
-}
+      .primary-button {
+        border-radius: 999px;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: #0f172a;
+        background: linear-gradient(135deg, #f9fafb, #e0f2fe);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
+        white-space: nowrap;
+      }
 
-function showMessage(text, type = "error") {
-  const msg = document.getElementById("message");
-  msg.textContent = text;
-  msg.className = type;
-}
+      .primary-button:disabled {
+        opacity: 0.6;
+        cursor: default;
+        box-shadow: none;
+      }
 
-async function render() {
-  try {
-    const state = await fetchState();
-    const list = document.getElementById("list");
-    list.innerHTML = "";
+      .list {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 360px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
 
-    state.contestants.forEach((c) => {
-      const row = document.createElement("div");
-      row.className = "contestant";
+      .item {
+        border-radius: 18px;
+        padding: 8px 10px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
 
-      row.innerHTML = `
-        <div>
-          <strong>${c.name}</strong><br>
-          <small>${c.subtitle || ""}</small>
+      .item-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .item-sub {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      .item-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .badge {
+        font-size: 0.78rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.8);
+        background: rgba(15, 23, 42, 0.9);
+      }
+
+      .danger-button {
+        border-radius: 999px;
+        border: none;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        background: rgba(248, 113, 113, 0.18);
+        color: var(--danger);
+        border: 1px solid rgba(248, 113, 113, 0.7);
+      }
+
+      .message {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        min-height: 1.1em;
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .message.success {
+        color: #4ade80;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="panel">
+        <div class="top-row">
+          <div class="title">Dot Poll · Admin</div>
+          <a href="index.html" class="nav-link">Back to voting</a>
         </div>
-        <button class="remove-btn" data-id="${c.id}">Remove</button>
-      `;
+        <div class="subtitle">
+          Manage contestants and see the total votes that have been submitted
+          from the public voting page.
+        </div>
 
-      list.appendChild(row);
-    });
+        <form id="add-form" class="form-row" autocomplete="off">
+          <div class="field">
+            <label for="name-input">Contestant name</label>
+            <input
+              id="name-input"
+              type="text"
+              placeholder="e.g. Team Aurora"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="subtitle-input">Subtitle (optional)</label>
+            <input
+              id="subtitle-input"
+              type="text"
+              placeholder="e.g. Concept A"
+            />
+          </div>
+          <div class="field" style="flex:0 0 auto; align-self:flex-end;">
+            <button class="primary-button" type="submit">
+              <span>＋</span> Add contestant
+            </button>
+          </div>
+        </form>
 
-    document.querySelectorAll(".remove-btn").forEach((btn) => {
-      btn.onclick = async () => {
-        try {
-          showMessage("");
-          await removeContestant(btn.dataset.id);
-          showMessage("Contestant removed.", "success");
-          await render(); // 🔁 always re-fetch from server
-        } catch (err) {
-          showMessage(err.message, "error");
+        <div class="form-row" style="margin-bottom: 8px;">
+          <button class="danger-button" type="button" id="flush-ips">
+            Flush IPs (allow re-vote)
+          </button>
+          <button class="danger-button" type="button" id="flush-all">
+            Flush ALL (contestants & votes)
+          </button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div id="list" class="list"></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const listEl = document.getElementById("list");
+        const formEl = document.getElementById("add-form");
+        const nameInput = document.getElementById("name-input");
+        const subtitleInput = document.getElementById("subtitle-input");
+        const messageEl = document.getElementById("message");
+        const flushIpsBtn = document.getElementById("flush-ips");
+        const flushAllBtn = document.getElementById("flush-all");
+
+        function setMessage(text, kind) {
+          messageEl.textContent = text || "";
+          messageEl.classList.remove("error", "success");
+          if (kind === "error") messageEl.classList.add("error");
+          if (kind === "success") messageEl.classList.add("success");
         }
-      };
-    });
-  } catch (err) {
-    showMessage(err.message, "error");
-  }
-}
 
-document.getElementById("add").onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const subtitle = document.getElementById("subtitle").value.trim();
+        async function fetchState() {
+          const res = await fetch("/api/state", {
+            headers: { "Cache-Control": "no-store" }
+          });
+          if (!res.ok) throw new Error("Failed to load state from server.");
+          return res.json();
+        }
 
-  if (!name) {
-    showMessage("Name is required.", "error");
-    return;
-  }
+        async function addContestant(name, subtitle) {
+          const res = await fetch("/api/admin-contestants", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, subtitle })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Failed to add contestant.");
+          }
+          return data;
+        }
 
-  try {
-    showMessage("");
-    await addContestant(name, subtitle);
-    showMessage("Contestant added!", "success");
-    document.getElementById("name").value = "";
-    document.getElementById("subtitle").value = "";
-    await render(); // 🔁 show whatever is actually stored
-  } catch (err) {
-    showMessage(err.message, "error");
-  }
-};
+        async function removeContestant(id) {
+          const res = await fetch("/api/admin-contestants", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Failed to remove contestant.");
+          }
+          return data;
+        }
 
-document.getElementById("flushIps").onclick = async () => {
-  try {
-    showMessage("");
-    await adminReset("flushIps");
-    showMessage("All voter IPs have been cleared!", "success");
-    // contestants list doesn't change, no need to re-render
-  } catch (err) {
-    showMessage(err.message, "error");
-  }
-};
+        async function adminReset(action) {
+          const res = await fetch("/api/admin-reset", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Reset failed.");
+          }
+          return data;
+        }
 
-document.getElementById("flushAll").onclick = async () => {
-  if (!confirm("Are you sure? This will delete ALL contestants and ALL votes (and IPs).")) return;
+        function renderFromState(state) {
+          const { contestants = [], totals = {} } = state || {};
+          listEl.innerHTML = "";
 
-  try {
-    showMessage("");
-    await adminReset("flushAll");
-    showMessage("All data has been reset!", "success");
-    await render(); // list should now be empty from server
-  } catch (err) {
-    showMessage(err.message, "error");
-  }
-};
+          if (!contestants.length) {
+            const div = document.createElement("div");
+            div.className = "item";
+            div.innerHTML = `
+              <div class="item-main">
+                <div class="item-name">No contestants yet.</div>
+                <div class="item-sub">Add some above and they will appear on the voting page.</div>
+              </div>
+            `;
+            listEl.appendChild(div);
+            return;
+          }
 
-render();
-</script>
+          contestants.forEach((c) => {
+            const div = document.createElement("div");
+            div.className = "item";
+            const total = totals[c.id] || 0;
 
+            div.innerHTML = `
+              <div class="item-main">
+                <div class="item-name">${c.name}</div>
+                <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
+              </div>
+              <div class="item-meta">
+                <span class="badge">Total votes: ${total}</span>
+                <button class="danger-button" type="button">Remove</button>
+              </div>
+            `;
 
+            const removeBtn = div.querySelector("button.danger-button");
+            removeBtn.addEventListener("click", async () => {
+              const confirmed = confirm(
+                `Remove "${c.name}" and all of its votes?`
+              );
+              if (!confirmed) return;
 
-</body>
+              try {
+                setMessage("", null);
+                await removeContestant(c.id);
+                setMessage(`Removed "${c.name}".`, "success");
+                await render(); // reload from server
+              } catch (err) {
+                setMessage(err.message, "error");
+              }
+            });
+
+            listEl.appendChild(div);
+          });
+        }
+
+        async function render() {
+          try {
+            const state = await fetchState();
+            renderFromState(state);
+          } catch (err) {
+            console.error(err);
+            setMessage(err.message, "error");
+          }
+        }
+
+        formEl.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const name = nameInput.value.trim();
+          const subtitle = subtitleInput.value.trim();
+
+          if (!name) {
+            setMessage("Name is required.", "error");
+            return;
+          }
+
+          try {
+            setMessage("", null);
+            await addContestant(name, subtitle);
+            setMessage(`Added "${name}".`, "success");
+            nameInput.value = "";
+            subtitleInput.value = "";
+            await render();
+          } catch (err) {
+            setMessage(err.message, "error");
+          }
+        });
+
+        flushIpsBtn.addEventListener("click", async () => {
+          try {
+            setMessage("", null);
+            await adminReset("flushIps");
+            setMessage("All voter IPs have been cleared. Old users can vote again.", "success");
+          } catch (err) {
+            setMessage(err.message, "error");
+          }
+        });
+
+        flushAllBtn.addEventListener("click", async () => {
+          if (!confirm("Flush ALL contestants and votes? This cannot be undone.")) return;
+          try {
+            setMessage("", null);
+            await adminReset("flushAll");
+            setMessage("All contestants & votes have been cleared.", "success");
+            await render();
+          } catch (err) {
+            setMessage(err.message, "error");
+          }
+        });
+
+        render();
+      })();
+    </script>
+  </body>
 </html>

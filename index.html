@@ -3,18 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dot Vote Poll</title>
+    <title>Dot Poll</title>
     <style>
       :root {
         --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%);
-        --glass-bg: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.18),
-          rgba(255, 255, 255, 0.05)
-        );
-        --glass-border: rgba(255, 255, 255, 0.4);
+        --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+        --glass-border: rgba(148, 163, 184, 0.4);
         --accent: #38bdf8;
-        --accent-soft: rgba(56, 189, 248, 0.35);
         --danger: #fb7185;
         --text-main: #e5e7eb;
         --text-muted: #9ca3af;
@@ -28,8 +23,7 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-          sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
         color: var(--text-main);
         background: var(--bg);
         display: flex;
@@ -78,12 +72,7 @@
         width: 8px;
         height: 8px;
         border-radius: 999px;
-        background: radial-gradient(
-          circle at 30% 30%,
-          #f9fafb 0,
-          #38bdf8 50%,
-          #0f172a 100%
-        );
+        background: radial-gradient(circle at 30% 30%, #f9fafb 0, #38bdf8 50%, #0f172a 100%);
         box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.7);
       }
 
@@ -92,7 +81,7 @@
         color: var(--text-muted);
       }
 
-      .nav-link {
+      .admin-link {
         font-size: 0.8rem;
         color: var(--text-muted);
         text-decoration: none;
@@ -102,12 +91,6 @@
         background: rgba(15, 23, 42, 0.6);
         backdrop-filter: blur(16px) saturate(150%);
         -webkit-backdrop-filter: blur(16px) saturate(150%);
-        transition: background 0.12s ease, border-color 0.12s ease;
-      }
-
-      .nav-link:hover {
-        background: rgba(15, 23, 42, 0.9);
-        border-color: rgba(148, 163, 184, 0.8);
       }
 
       .panel {
@@ -115,7 +98,7 @@
         border-radius: 24px;
         padding: 18px 16px 16px;
         background: var(--glass-bg);
-        border: 1px solid rgba(148, 163, 184, 0.4);
+        border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-soft);
         backdrop-filter: blur(22px) saturate(160%);
         -webkit-backdrop-filter: blur(22px) saturate(160%);
@@ -126,16 +109,8 @@
         content: "";
         position: absolute;
         inset: -40%;
-        background: radial-gradient(
-            circle at 0% 0%,
-            rgba(125, 211, 252, 0.22),
-            transparent 60%
-          ),
-          radial-gradient(
-            circle at 100% 0%,
-            rgba(244, 114, 182, 0.16),
-            transparent 55%
-          );
+        background: radial-gradient(circle at 0% 0%, rgba(125, 211, 252, 0.22), transparent 60%),
+          radial-gradient(circle at 100% 0%, rgba(244, 114, 182, 0.16), transparent 55%);
         opacity: 0.9;
         pointer-events: none;
         mix-blend-mode: screen;
@@ -172,11 +147,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        background: radial-gradient(
-            circle at 0% 0%,
-            rgba(248, 250, 252, 0.2),
-            transparent 55%
-          ),
+        background: radial-gradient(circle at 0% 0%, rgba(248, 250, 252, 0.2), transparent 55%),
           rgba(15, 23, 42, 0.55);
         border: 1px solid rgba(148, 163, 184, 0.6);
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
@@ -189,11 +160,7 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(
-          circle at 10% -20%,
-          rgba(248, 250, 252, 0.72),
-          transparent 55%
-        );
+        background: radial-gradient(circle at 10% -20%, rgba(248, 250, 252, 0.72), transparent 55%);
         mix-blend-mode: soft-light;
         opacity: 0.6;
         pointer-events: none;
@@ -212,12 +179,7 @@
         width: 30px;
         height: 30px;
         border-radius: 999px;
-        background: radial-gradient(
-          circle at 30% 20%,
-          #f9fafb 0,
-          #38bdf8 40%,
-          #0f172a 100%
-        );
+        background: radial-gradient(circle at 30% 20%, #f9fafb 0, #38bdf8 40%, #0f172a 100%);
         box-shadow: 0 10px 22px rgba(15, 23, 42, 0.9);
         flex-shrink: 0;
       }
@@ -265,12 +227,7 @@
         width: 6px;
         height: 6px;
         border-radius: 999px;
-        background: radial-gradient(
-          circle at 30% 30%,
-          #e5f4ff 0,
-          #38bdf8 45%,
-          #0f172a 100%
-        );
+        background: radial-gradient(circle at 30% 30%, #e5f4ff 0, #38bdf8 45%, #0f172a 100%);
       }
 
       .vote-count {
@@ -290,15 +247,10 @@
         justify-content: center;
         font-size: 0.9rem;
         cursor: pointer;
-        background: radial-gradient(
-          circle at 30% 20%,
-          rgba(248, 250, 252, 0.9),
-          rgba(248, 250, 252, 0.3)
-        );
+        background: radial-gradient(circle at 30% 20%, rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.3));
         color: #0f172a;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.8);
-        transition: transform 0.12s ease, box-shadow 0.12s ease,
-          background 0.12s ease, opacity 0.12s ease;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
       }
 
       .btn-circle:active {
@@ -307,16 +259,12 @@
       }
 
       .btn-circle.minus {
-        background: radial-gradient(
-          circle at 30% 20%,
-          rgba(248, 250, 252, 0.9),
-          rgba(248, 250, 252, 0.18)
-        );
+        background: radial-gradient(circle at 30% 20%, rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.18));
         opacity: 0.8;
       }
 
       .btn-circle:disabled {
-        opacity: 0.35;
+        opacity: 0.4;
         cursor: default;
         box-shadow: none;
       }
@@ -355,11 +303,7 @@
       .bottom-panel {
         margin-top: 4px;
         border-radius: 999px;
-        background: linear-gradient(
-          135deg,
-          rgba(15, 23, 42, 0.92),
-          rgba(15, 23, 42, 0.85)
-        );
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.85));
         border: 1px solid rgba(148, 163, 184, 0.7);
         box-shadow: 0 24px 40px rgba(15, 23, 42, 0.9);
         padding: 12px 16px;
@@ -405,14 +349,8 @@
         width: 16px;
         height: 16px;
         border-radius: 999px;
-        background: radial-gradient(
-          circle at 30% 20%,
-          #f9fafb 0,
-          #38bdf8 45%,
-          #0f172a 100%
-        );
-        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9),
-          0 10px 22px rgba(15, 23, 42, 0.95);
+        background: radial-gradient(circle at 30% 20%, #f9fafb 0, #38bdf8 45%, #0f172a 100%);
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9), 0 10px 22px rgba(15, 23, 42, 0.95);
         animation: float 4s ease-in-out infinite;
       }
 
@@ -456,8 +394,7 @@
         color: #0f172a;
         background: linear-gradient(135deg, #f9fafb, #e0f2fe);
         box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
-        transition: transform 0.12s ease, box-shadow 0.12s ease,
-          filter 0.12s ease, opacity 0.12s ease;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
         white-space: nowrap;
       }
 
@@ -465,12 +402,7 @@
         width: 7px;
         height: 7px;
         border-radius: 999px;
-        background: radial-gradient(
-          circle at 30% 20%,
-          #0f172a,
-          #38bdf8 60%,
-          #0ea5e9 100%
-        );
+        background: radial-gradient(circle at 30% 20%, #0f172a, #38bdf8 60%, #0ea5e9 100%);
       }
 
       .primary-button:disabled {
@@ -517,7 +449,7 @@
           </div>
           <div class="subtitle">You have 5 dots. Max 3 per contestant.</div>
         </div>
-        <a href="admin.html" class="nav-link">Admin</a>
+        <a href="admin.html" class="admin-link">Admin</a>
       </header>
 
       <main class="layout-main">
@@ -549,11 +481,7 @@
                 / 5
               </div>
             </div>
-            <div
-              class="vote-spheres"
-              id="vote-spheres"
-              aria-hidden="true"
-            ></div>
+            <div class="vote-spheres" id="vote-spheres" aria-hidden="true"></div>
             <button class="primary-button" id="submit-btn" type="button">
               <span class="icon"></span>
               Submit votes
@@ -576,23 +504,15 @@
         const messageEl = document.getElementById("message");
         const submitBtn = document.getElementById("submit-btn");
 
-        if (
-          !grid ||
-          !spheres ||
-          !votesLeftEl ||
-          !totalUsedEl ||
-          !messageEl ||
-          !submitBtn
-        ) {
+        if (!grid || !spheres || !votesLeftEl || !totalUsedEl || !messageEl || !submitBtn) {
           console.error("Dot poll: missing required elements.");
           return;
         }
 
         const state = {
+          contestants: [],
           totalUsed: 0,
-          perContestant: new Map(),
-          locked: false,
-          contestants: []
+          perContestant: new Map()
         };
 
         function setMessage(text, kind) {
@@ -616,27 +536,18 @@
           votesLeftEl.textContent = String(MAX_TOTAL - state.totalUsed);
           totalUsedEl.textContent = String(state.totalUsed);
 
-          const cards = grid.querySelectorAll(".contestant-card");
-          cards.forEach((card) => {
-            const id = card.getAttribute("data-id") || "";
+          state.contestants.forEach((c) => {
+            const card = grid.querySelector(\`.contestant-card[data-id="\${c.id}"]\`);
+            if (!card) return;
             const countSpan = card.querySelector('[data-role="count"]');
             const minusBtn = card.querySelector('[data-role="minus"]');
             const plusBtn = card.querySelector('[data-role="plus"]');
-            const value = state.perContestant.get(id) || 0;
+            const val = state.perContestant.get(c.id) || 0;
 
-            if (countSpan) {
-              countSpan.textContent = String(value);
-            }
-
-            if (minusBtn) {
-              minusBtn.disabled = state.locked || value === 0;
-            }
-
+            if (countSpan) countSpan.textContent = String(val);
+            if (minusBtn) minusBtn.disabled = val === 0;
             if (plusBtn) {
-              plusBtn.disabled =
-                state.locked ||
-                value >= MAX_PER ||
-                state.totalUsed >= MAX_TOTAL;
+              plusBtn.disabled = val >= MAX_PER || state.totalUsed >= MAX_TOTAL;
             }
           });
 
@@ -644,151 +555,144 @@
         }
 
         function addVote(id) {
-          if (state.locked) return;
-
-          const currentForContestant = state.perContestant.get(id) || 0;
+          const current = state.perContestant.get(id) || 0;
 
           if (state.totalUsed >= MAX_TOTAL) {
             setMessage("You’ve already used all 5 votes.", "error");
             return;
           }
 
-          if (currentForContestant >= MAX_PER) {
+          if (current >= MAX_PER) {
             setMessage("You can only give 3 votes to one contestant.", "error");
             return;
           }
 
-          state.perContestant.set(id, currentForContestant + 1);
+          state.perContestant.set(id, current + 1);
           state.totalUsed += 1;
           setMessage("");
           renderCounts();
         }
 
         function removeVote(id) {
-          if (state.locked) return;
+          const current = state.perContestant.get(id) || 0;
+          if (current <= 0) return;
 
-          const currentForContestant = state.perContestant.get(id) || 0;
-
-          if (currentForContestant <= 0) {
-            return;
-          }
-
-          state.perContestant.set(id, currentForContestant - 1);
+          state.perContestant.set(id, current - 1);
           state.totalUsed -= 1;
           setMessage("");
           renderCounts();
         }
 
-        function createContestantCard(c) {
-          const article = document.createElement("article");
-          article.className = "contestant-card";
-          article.setAttribute("data-id", c.id);
-
-          article.innerHTML = `
-            <div class="contestant-main">
-              <div class="contestant-avatar"></div>
-              <div class="contestant-name-block">
-                <div class="contestant-name">${c.name}</div>
-                <div class="contestant-subtext">${c.subtitle || "&nbsp;"}</div>
-              </div>
-            </div>
-            <div class="vote-controls">
-              <div class="chip">
-                <span class="chip-dot"></span>
-                <span class="vote-count" data-role="count">0</span>
-                <span>/ 3</span>
-              </div>
-              <button class="btn-circle minus" data-role="minus" aria-label="Remove vote">−</button>
-              <button class="btn-circle plus" data-role="plus" aria-label="Add vote">+</button>
-            </div>
-          `;
-
-          const minusBtn = article.querySelector('[data-role="minus"]');
-          const plusBtn = article.querySelector('[data-role="plus"]');
-
+        function wireCardEvents(card, id) {
+          const minusBtn = card.querySelector('[data-role="minus"]');
+          const plusBtn = card.querySelector('[data-role="plus"]');
           if (minusBtn) {
             minusBtn.addEventListener("click", function () {
-              removeVote(c.id);
+              removeVote(id);
             });
           }
-
           if (plusBtn) {
             plusBtn.addEventListener("click", function () {
-              addVote(c.id);
+              addVote(id);
             });
           }
-
-          return article;
         }
 
-        async function loadContestants() {
+        function renderContestants() {
+          grid.innerHTML = "";
+
+          if (!state.contestants.length) {
+            const div = document.createElement("div");
+            div.className = "subtitle";
+            div.textContent = "No contestants yet. Ask the admin to add some.";
+            grid.appendChild(div);
+            return;
+          }
+
+          state.contestants.forEach((c) => {
+            const article = document.createElement("article");
+            article.className = "contestant-card";
+            article.setAttribute("data-id", c.id);
+
+            article.innerHTML = \`
+              <div class="contestant-main">
+                <div class="contestant-avatar"></div>
+                <div class="contestant-name-block">
+                  <div class="contestant-name">\${c.name}</div>
+                  <div class="contestant-subtext">\${c.subtitle || ""}</div>
+                </div>
+              </div>
+              <div class="vote-controls">
+                <div class="chip">
+                  <span class="chip-dot"></span>
+                  <span class="vote-count" data-role="count">0</span>
+                  <span>/ 3</span>
+                </div>
+                <button class="btn-circle minus" data-role="minus" aria-label="Remove vote">−</button>
+                <button class="btn-circle plus" data-role="plus" aria-label="Add vote">+</button>
+              </div>
+            \`;
+
+            grid.appendChild(article);
+            wireCardEvents(article, c.id);
+          });
+
+          renderCounts();
+        }
+
+        async function loadStateFromServer() {
           try {
-            const res = await fetch("/api/state");
-            if (!res.ok) {
-              throw new Error("Failed to load contestants.");
-            }
-            const data = await res.json();
-            const contestants = Array.isArray(data.contestants)
-              ? data.contestants
-              : [];
-            state.contestants = contestants;
-            state.perContestant = new Map();
-            grid.innerHTML = "";
-
-            if (contestants.length === 0) {
-              grid.innerHTML =
-                '<div class="summary-label">No contestants yet. Ask the admin to add some.</div>';
-              return;
-            }
-
-            contestants.forEach((c) => {
-              state.perContestant.set(c.id, 0);
-              const card = createContestantCard(c);
-              grid.appendChild(card);
+            setMessage("Loading contestants…", null);
+            const res = await fetch("/api/state", {
+              headers: { "Cache-Control": "no-store" }
             });
-
-            renderCounts();
+            if (!res.ok) throw new Error("Failed to load state from server.");
+            const json = await res.json();
+            state.contestants = Array.isArray(json.contestants) ? json.contestants : [];
+            state.perContestant.clear();
+            state.totalUsed = 0;
+            renderContestants();
+            setMessage("", null);
           } catch (err) {
             console.error(err);
-            setMessage("Failed to load contestants from server.", "error");
+            setMessage("Could not load contestants from server.", "error");
           }
         }
 
         submitBtn.addEventListener("click", async function () {
-          if (state.locked) return;
-
           if (state.totalUsed === 0) {
             setMessage("You haven’t used any votes yet.", "error");
             return;
           }
 
-          const allocations = {};
-          state.perContestant.forEach((value, key) => {
-            if (value > 0) allocations[key] = value;
+          const payload = {};
+          state.perContestant.forEach((val, id) => {
+            if (val > 0) payload[id] = val;
           });
 
-          try {
-            submitBtn.disabled = true;
-            setMessage("Submitting your votes…", "");
+          submitBtn.disabled = true;
 
+          try {
             const res = await fetch("/api/vote", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
               },
-              body: JSON.stringify({ allocations })
+              body: JSON.stringify({ votes: payload })
             });
 
-            const data = await res.json();
-
-            if (!res.ok) {
-              setMessage(data.error || "Something went wrong.", "error");
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.ok) {
+              const msg = data.error || "Failed to submit votes.";
+              setMessage(msg, "error");
               submitBtn.disabled = false;
               return;
             }
 
             setMessage("Your votes have been submitted. Thank you!", "success");
-            state.locked = true;
+            submitBtn.disabled = true;
+            grid.querySelectorAll("button").forEach((btn) => (btn.disabled = true));
+            state.totalUsed = MAX_TOTAL;
             renderCounts();
           } catch (err) {
             console.error(err);
@@ -797,8 +701,8 @@
           }
         });
 
-        loadContestants();
         renderSpheres();
+        loadStateFromServer();
       })();
     </script>
   </body>
