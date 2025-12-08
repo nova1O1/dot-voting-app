@@ -46,7 +46,7 @@ export async function saveState(state) {
     STATE_PATH,
     JSON.stringify(state),
     {
-      access: "private",
+      access: "public",
       addRandomSuffix: false,
       contentType: "application/json"
     }
