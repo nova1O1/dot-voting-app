@@ -4,7 +4,7 @@ import { loadState, saveState, getClientIp, hashIp } from "./_state.js";
 const MAX_TOTAL = 5;
 const MAX_PER = 3;
 
-// Helper to read JSON body safely
+// Read JSON body safely
 async function readJson(req) {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -34,7 +34,6 @@ export default async function handler(req, res) {
     const ip = getClientIp(req);
     const ipHash = hashIp(ip);
 
-    // Parse JSON body (allocations)
     let body = {};
     try {
       body = await readJson(req);
@@ -43,11 +42,10 @@ export default async function handler(req, res) {
       return;
     }
 
-    const allocations = body.allocations || {}; // { contestantId: votes }
-
+    const allocations = body.allocations || {};
     const votesArray = Object.entries(allocations).map(([id, v]) => ({
       id,
-      votes: Number(v) || 0,
+      votes: Number(v) || 0
     }));
 
     if (!votesArray.length) {
@@ -70,11 +68,10 @@ export default async function handler(req, res) {
 
     const state = await loadState();
 
-    // One-vote-per-IP check
     if (state.voters && state.voters[ipHash]) {
-      res
-        .status(403)
-        .json({ error: "You have already voted from this device/IP." });
+      res.status(403).json({
+        error: "You have already voted from this device/IP."
+      });
       return;
     }
 
@@ -99,10 +96,13 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       ok: true,
-      totals: state.totals,
+      totals: state.totals
     });
   } catch (err) {
     console.error("api/vote error:", err);
-    res.status(500).json({ error: "Internal error while submitting votes." });
+    res.status(500).json({
+      error: "Internal error while submitting votes.",
+      detail: String(err?.message || err)
+    });
   }
 }

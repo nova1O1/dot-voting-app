@@ -4,43 +4,34 @@ import { list, put } from "@vercel/blob";
 
 export const STATE_PATH = "poll/state.json";
 
-// Helper to ensure we always have a usable state shape
 function normalizeState(raw) {
   return {
-    contestants: Array.isArray(raw?.contestants) ? raw.contestants : [
-      { id: "a", name: "Team Aurora", subtitle: "Concept A" },
-      { id: "b", name: "Project Nova", subtitle: "Concept B" },
-      { id: "c", name: "Studio Echo", subtitle: "Concept C" }
-    ],
+    contestants: Array.isArray(raw?.contestants)
+      ? raw.contestants
+      : [
+          { id: "a", name: "Team Aurora", subtitle: "Concept A" },
+          { id: "b", name: "Project Nova", subtitle: "Concept B" },
+          { id: "c", name: "Studio Echo", subtitle: "Concept C" }
+        ],
     totals: raw?.totals || {},
     voters: raw?.voters || {}
   };
 }
 
 export async function loadState() {
-  // Explicitly pass the token just to be extra-safe
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-
-  if (!token) {
-    throw new Error(
-      "BLOB_READ_WRITE_TOKEN is not set. Check your Vercel env variables."
-    );
-  }
-
   const { blobs } = await list({
     prefix: STATE_PATH,
-    limit: 1,
-    token
+    limit: 1
   });
 
   if (!blobs.length) {
-    // No state yet: return default
+    // first run: no state yet
     return normalizeState({});
   }
 
   const blob = blobs[0];
-
   const res = await fetch(blob.url);
+
   if (!res.ok) {
     throw new Error(`Failed to fetch state blob: ${res.status} ${res.statusText}`);
   }
@@ -50,25 +41,14 @@ export async function loadState() {
 }
 
 export async function saveState(state) {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-
-  if (!token) {
-    throw new Error(
-      "BLOB_READ_WRITE_TOKEN is not set. Check your Vercel env variables."
-    );
-  }
-
-  // IMPORTANT: do NOT pass cacheControlMaxAge: 0
-  // It must be >= 60 seconds or omitted.
+  // Minimal, safe options: no extra token, no cacheControlMaxAge
   await put(
     STATE_PATH,
     JSON.stringify(state),
     {
       access: "private",
       addRandomSuffix: false,
-      contentType: "application/json",
-      token
-      // cacheControlMaxAge: 60 // optional, but not needed here
+      contentType: "application/json"
     }
   );
 }

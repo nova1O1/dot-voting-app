@@ -1,7 +1,6 @@
 // api/admin-contestants.js
 import { loadState, saveState } from "./_state.js";
 
-// Helper to read JSON body safely
 async function readJson(req) {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -28,7 +27,6 @@ export default async function handler(req, res) {
     if (!state.totals) state.totals = {};
 
     if (req.method === "POST") {
-      // Add contestant
       let body = {};
       try {
         body = await readJson(req);
@@ -43,8 +41,7 @@ export default async function handler(req, res) {
         return;
       }
 
-      const id =
-        "c_" + Date.now().toString(36) + "_" + state.contestants.length;
+      const id = "c_" + Date.now().toString(36) + "_" + state.contestants.length;
       state.contestants.push({ id, name, subtitle: subtitle || "" });
       state.totals[id] = 0;
 
@@ -52,13 +49,12 @@ export default async function handler(req, res) {
       res.status(200).json({
         ok: true,
         contestants: state.contestants,
-        totals: state.totals,
+        totals: state.totals
       });
       return;
     }
 
     if (req.method === "DELETE") {
-      // Remove contestant
       let body = {};
       try {
         body = await readJson(req);
@@ -82,7 +78,7 @@ export default async function handler(req, res) {
       res.status(200).json({
         ok: true,
         contestants: state.contestants,
-        totals: state.totals,
+        totals: state.totals
       });
       return;
     }
@@ -90,8 +86,9 @@ export default async function handler(req, res) {
     res.status(405).json({ error: "Method not allowed" });
   } catch (err) {
     console.error("api/admin-contestants error:", err);
-    res
-      .status(500)
-      .json({ error: "Internal error while managing contestants." });
+    res.status(500).json({
+      error: "Internal error while managing contestants.",
+      detail: String(err?.message || err)
+    });
   }
 }
