@@ -21,7 +21,7 @@
       border-radius: 12px;
       max-width: 600px;
     }
-    .input-row {
+    .input-row, .button-row {
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
@@ -44,6 +44,14 @@
     .add-btn {
       background: #38bdf8;
       color: #0f172a;
+    }
+    .reset-btn {
+      background: #f59e0b;
+      color: #0f172a;
+    }
+    .flush-btn {
+      background: #ef4444;
+      color: white;
     }
     .contestant {
       background: rgba(255,255,255,0.05);
@@ -73,16 +81,25 @@
   <h1>Dot Poll Admin</h1>
 
   <div class="panel">
+
+    <!-- ADD CONTESTANT -->
     <div class="input-row">
       <input type="text" id="name" placeholder="Contestant name" />
       <input type="text" id="subtitle" placeholder="Subtitle (optional)" />
       <button class="add-btn" id="add">Add</button>
     </div>
 
+    <!-- NEW RESET BUTTONS -->
+    <div class="button-row">
+      <button class="reset-btn" id="flushIps">Flush IPs</button>
+      <button class="flush-btn" id="flushAll">Flush ALL</button>
+    </div>
+
     <div id="message"></div>
 
     <h2>Contestants</h2>
     <div id="list"></div>
+
   </div>
 
 <script>
@@ -113,6 +130,18 @@ async function removeContestant(id) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to remove contestant");
+  return data;
+}
+
+async function adminReset(action) {
+  const res = await fetch("/api/admin-reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action })
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Reset action failed");
   return data;
 }
 
@@ -176,6 +205,30 @@ document.getElementById("add").onclick = async () => {
     showMessage("Contestant added!", "success");
     document.getElementById("name").value = "";
     document.getElementById("subtitle").value = "";
+    render();
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+};
+
+/* NEW BUTTONS */
+document.getElementById("flushIps").onclick = async () => {
+  try {
+    showMessage("");
+    await adminReset("flushIps");
+    showMessage("All voter IPs have been cleared!", "success");
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+};
+
+document.getElementById("flushAll").onclick = async () => {
+  if (!confirm("Are you sure? This will delete ALL contestants and ALL votes.")) return;
+
+  try {
+    showMessage("");
+    await adminReset("flushAll");
+    showMessage("All data has been reset!", "success");
     render();
   } catch (err) {
     showMessage(err.message, "error");
