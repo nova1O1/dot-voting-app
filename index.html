@@ -566,7 +566,6 @@
 
     <script>
       (function () {
-        const STORAGE_KEY = "dotPollContestants";
         const MAX_TOTAL = 5;
         const MAX_PER = 3;
 
@@ -589,63 +588,12 @@
           return;
         }
 
-        function loadContestants() {
-          try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) {
-              const defaults = [
-                {
-                  id: "a",
-                  name: "Team Aurora",
-                  subtitle: "Concept A",
-                  totalVotes: 0,
-                },
-                {
-                  id: "b",
-                  name: "Project Nova",
-                  subtitle: "Concept B",
-                  totalVotes: 0,
-                },
-                {
-                  id: "c",
-                  name: "Studio Echo",
-                  subtitle: "Concept C",
-                  totalVotes: 0,
-                },
-              ];
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-              return defaults;
-            }
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return [];
-            return parsed.map((c, idx) => ({
-              id: c.id ?? String(idx),
-              name: c.name ?? "Untitled",
-              subtitle: c.subtitle ?? "",
-              totalVotes: typeof c.totalVotes === "number" ? c.totalVotes : 0,
-            }));
-          } catch (e) {
-            console.warn("Failed to parse contestants; resetting.", e);
-            localStorage.removeItem(STORAGE_KEY);
-            return loadContestants();
-          }
-        }
-
-        function saveContestants(list) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-        }
-
-        const contestantsData = loadContestants();
-
         const state = {
           totalUsed: 0,
           perContestant: new Map(),
           locked: false,
+          contestants: []
         };
-
-        contestantsData.forEach((c) => {
-          state.perContestant.set(c.id, 0);
-        });
 
         function setMessage(text, kind) {
           messageEl.textContent = text || "";
@@ -741,9 +689,7 @@
               <div class="contestant-avatar"></div>
               <div class="contestant-name-block">
                 <div class="contestant-name">${c.name}</div>
-                <div class="contestant-subtext">${
-                  c.subtitle || "&nbsp;"
-                }</div>
+                <div class="contestant-subtext">${c.subtitle || "&nbsp;"}</div>
               </div>
             </div>
             <div class="vote-controls">
@@ -775,21 +721,40 @@
           return article;
         }
 
-        function renderContestants() {
-          grid.innerHTML = "";
-          if (contestantsData.length === 0) {
-            grid.innerHTML =
-              '<div class="summary-label">No contestants. Ask the admin to add some.</div>';
-            return;
-          }
+        async function loadContestants() {
+          try {
+            const res = await fetch("/api/state");
+            if (!res.ok) {
+              throw new Error("Failed to load contestants.");
+            }
+            const data = await res.json();
+            const contestants = Array.isArray(data.contestants)
+              ? data.contestants
+              : [];
+            state.contestants = contestants;
+            state.perContestant = new Map();
+            grid.innerHTML = "";
 
-          contestantsData.forEach((c) => {
-            const card = createContestantCard(c);
-            grid.appendChild(card);
-          });
+            if (contestants.length === 0) {
+              grid.innerHTML =
+                '<div class="summary-label">No contestants yet. Ask the admin to add some.</div>';
+              return;
+            }
+
+            contestants.forEach((c) => {
+              state.perContestant.set(c.id, 0);
+              const card = createContestantCard(c);
+              grid.appendChild(card);
+            });
+
+            renderCounts();
+          } catch (err) {
+            console.error(err);
+            setMessage("Failed to load contestants from server.", "error");
+          }
         }
 
-        submitBtn.addEventListener("click", function () {
+        submitBtn.addEventListener("click", async function () {
           if (state.locked) return;
 
           if (state.totalUsed === 0) {
@@ -797,32 +762,42 @@
             return;
           }
 
-          // Add the current selection to the stored totals
-          const stored = loadContestants();
-          const byId = new Map(stored.map((c) => [c.id, c]));
-
+          const allocations = {};
           state.perContestant.forEach((value, key) => {
-            if (!value) return;
-            const c = byId.get(key);
-            if (c) {
-              c.totalVotes = (c.totalVotes || 0) + value;
-            }
+            if (value > 0) allocations[key] = value;
           });
 
-          saveContestants(Array.from(byId.values()));
+          try {
+            submitBtn.disabled = true;
+            setMessage("Submitting your votes…", "");
 
-          setMessage(
-            "Your votes have been submitted. Thank you!",
-            "success"
-          );
-          state.locked = true;
-          renderCounts();
-          submitBtn.disabled = true;
+            const res = await fetch("/api/vote", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ allocations })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              setMessage(data.error || "Something went wrong.", "error");
+              submitBtn.disabled = false;
+              return;
+            }
+
+            setMessage("Your votes have been submitted. Thank you!", "success");
+            state.locked = true;
+            renderCounts();
+          } catch (err) {
+            console.error(err);
+            setMessage("Network error while submitting votes.", "error");
+            submitBtn.disabled = false;
+          }
         });
 
-        // initial render
-        renderContestants();
-        renderCounts();
+        loadContestants();
         renderSpheres();
       })();
     </script>

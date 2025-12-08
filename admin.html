@@ -261,13 +261,16 @@
 
     <script>
       (function () {
-        const STORAGE_KEY = "dotPollContestants";
-
         const listEl = document.getElementById("list");
         const formEl = document.getElementById("add-form");
         const nameInput = document.getElementById("name-input");
         const subtitleInput = document.getElementById("subtitle-input");
         const messageEl = document.getElementById("message");
+
+        const state = {
+          contestants: [],
+          totals: {}
+        };
 
         function setMessage(text, kind) {
           messageEl.textContent = text || "";
@@ -276,40 +279,51 @@
           if (kind === "success") messageEl.classList.add("success");
         }
 
-        function loadContestants() {
-          try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return [];
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return [];
-            return parsed.map((c, idx) => ({
-              id: c.id ?? String(idx),
-              name: c.name ?? "Untitled",
-              subtitle: c.subtitle ?? "",
-              totalVotes: typeof c.totalVotes === "number" ? c.totalVotes : 0,
-            }));
-          } catch (e) {
-            console.warn("Failed to parse contestants; resetting.", e);
-            localStorage.removeItem(STORAGE_KEY);
-            return [];
+        async function fetchState() {
+          const res = await fetch("/api/state");
+          if (!res.ok) throw new Error("Failed to load state");
+          const data = await res.json();
+          state.contestants = Array.isArray(data.contestants)
+            ? data.contestants
+            : [];
+          state.totals = data.totals || {};
+        }
+
+        async function addContestant(name, subtitle) {
+          const res = await fetch("/api/admin-contestants", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, subtitle })
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to add contestant");
           }
         }
 
-        function saveContestants(list) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        async function removeContestant(id) {
+          const res = await fetch("/api/admin-contestants", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to remove contestant");
+          }
         }
 
         function render() {
-          const data = loadContestants();
           listEl.innerHTML = "";
 
-          if (data.length === 0) {
+          if (state.contestants.length === 0) {
             listEl.innerHTML =
               '<div class="item"><div class="item-main"><div class="item-name">No contestants yet.</div><div class="item-sub">Add some above and they will appear on the voting page.</div></div></div>';
             return;
           }
 
-          data.forEach((c) => {
+          state.contestants.forEach((c) => {
+            const votes = state.totals[c.id] || 0;
             const div = document.createElement("div");
             div.className = "item";
             div.innerHTML = `
@@ -318,25 +332,28 @@
                 <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
               </div>
               <div class="item-meta">
-                <span class="badge">Total votes: ${
-                  c.totalVotes || 0
-                }</span>
+                <span class="badge">Total votes: ${votes}</span>
                 <button class="danger-button" type="button">Remove</button>
               </div>
             `;
 
             const removeBtn = div.querySelector("button.danger-button");
             if (removeBtn) {
-              removeBtn.addEventListener("click", function () {
+              removeBtn.addEventListener("click", async function () {
                 const confirmed = confirm(
                   `Remove "${c.name}" and all of its votes?`
                 );
                 if (!confirmed) return;
-                const current = loadContestants();
-                const next = current.filter((x) => x.id !== c.id);
-                saveContestants(next);
-                render();
-                setMessage(`Removed "${c.name}".`, "success");
+                try {
+                  setMessage("Removing contestant…", "");
+                  await removeContestant(c.id);
+                  await fetchState();
+                  render();
+                  setMessage(`Removed "${c.name}".`, "success");
+                } catch (err) {
+                  console.error(err);
+                  setMessage(err.message, "error");
+                }
               });
             }
 
@@ -344,7 +361,7 @@
           });
         }
 
-        formEl.addEventListener("submit", function (e) {
+        formEl.addEventListener("submit", async function (e) {
           e.preventDefault();
           const name = nameInput.value.trim();
           const subtitle = subtitleInput.value.trim();
@@ -354,23 +371,33 @@
             return;
           }
 
-          const current = loadContestants();
-          const newItem = {
-            id: "c_" + Date.now().toString(36) + "_" + current.length,
-            name,
-            subtitle,
-            totalVotes: 0,
-          };
-
-          current.push(newItem);
-          saveContestants(current);
-          nameInput.value = "";
-          subtitleInput.value = "";
-          render();
-          setMessage(`Added "${newItem.name}".`, "success");
+          try {
+            setMessage("Adding contestant…", "");
+            await addContestant(name, subtitle);
+            nameInput.value = "";
+            subtitleInput.value = "";
+            await fetchState();
+            render();
+            setMessage(`Added "${name}".`, "success");
+          } catch (err) {
+            console.error(err);
+            setMessage(err.message, "error");
+          }
         });
 
-        render();
+        async function init() {
+          try {
+            setMessage("Loading current state…", "");
+            await fetchState();
+            render();
+            setMessage("", "");
+          } catch (err) {
+            console.error(err);
+            setMessage("Failed to load initial state.", "error");
+          }
+        }
+
+        init();
       })();
     </script>
   </body>
