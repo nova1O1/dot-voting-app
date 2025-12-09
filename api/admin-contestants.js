@@ -1,12 +1,30 @@
 // api/admin-contestants.js
 export const config = {
-  runtime: "nodejs"
+  runtime: "nodejs",
 };
 
 import { loadState, saveState } from "./_state.js";
 
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+
+// simple helper to gate admin access
+function ensureAdmin(req, res) {
+  // if no token configured, fall back to "open" (handy for local dev)
+  if (!ADMIN_TOKEN) return true;
+
+  const header = req.headers["x-admin-token"];
+  if (typeof header === "string" && header === ADMIN_TOKEN) {
+    return true;
+  }
+
+  res.status(401).json({ ok: false, error: "Unauthorized (invalid admin token)" });
+  return false;
+}
+
 export default async function handler(req, res) {
   try {
+    if (!ensureAdmin(req, res)) return;
+
     const state = await loadState();
     if (!Array.isArray(state.contestants)) state.contestants = [];
     if (!state.totals || typeof state.totals !== "object") state.totals = {};
@@ -29,7 +47,7 @@ export default async function handler(req, res) {
       res.status(200).json({
         ok: true,
         contestants: state.contestants,
-        totals: state.totals
+        totals: state.totals,
       });
       return;
     }
@@ -51,7 +69,7 @@ export default async function handler(req, res) {
       res.status(200).json({
         ok: true,
         contestants: state.contestants,
-        totals: state.totals
+        totals: state.totals,
       });
       return;
     }
@@ -62,7 +80,7 @@ export default async function handler(req, res) {
     res.status(500).json({
       ok: false,
       error: "Internal error while managing contestants.",
-      detail: String(err?.message || err)
+      detail: String(err?.message || err),
     });
   }
 }

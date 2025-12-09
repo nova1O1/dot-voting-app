@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dot Poll</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <title>Sample Flipper | Vote </title>
     <style>
       :root {
         --bg: radial-gradient(circle at top, #354661 0, #0d0c12 55%);
@@ -100,7 +105,9 @@ body::before {
       }
 
       .title {
-        font-size: 1.5rem;
+        font-family: "Playfair Display", serif;
+
+        font-size: 2.5rem;
         letter-spacing: -0.03em;
         font-weight: 650;
         display: flex;
@@ -123,7 +130,7 @@ body::before {
       }
 
       .subtitle {
-        font-size: 0.9rem;
+        font-size: 1.2rem;
         color: var(--text-muted);
       }
 
@@ -141,7 +148,7 @@ body::before {
 
       .panel {
         position: relative;
-        border-radius: 24px;
+        border-radius: 50px;
         padding: 18px 16px 16px;
         background: var(--glass-bg);
         border: 1px solid var(--glass-border);
