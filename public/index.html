@@ -50,12 +50,10 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   color: var(--text-main);
   background: #020617;          /* solid fallback */
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
   overflow: hidden;
 }
+
 
 /* 3) Animated gradient layer sitting behind everything */
 body::before {
@@ -79,11 +77,13 @@ body::before {
       .app-shell {
         width: 100%;
         max-width: 960px;
+        margin: 0 auto;
         padding: 24px 16px 32px;
         display: flex;
         flex-direction: column;
         gap: 16px;
       }
+
 
       @media (min-width: 768px) {
         .app-shell {
@@ -324,8 +324,8 @@ body::before {
         flex-direction: column;
         --glass-border: rgba(148, 163, 184, 0.4);
         gap: 14px;
-        border-radius: 24px;
-        padding: 10px;
+        border-radius: 50px;
+        padding: 15px;
         animation: panel-glow 10s linear infinite;
         
       }
@@ -377,12 +377,18 @@ body::before {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+
       }
 
       @media (max-width: 480px) {
         .bottom-panel {
           flex-direction: column;
           align-items: stretch;
+        }
+
+        .primary-button {
+          width: 100%;
+          justify-content: center; /* center icon + text */
         }
       }
 
@@ -493,6 +499,35 @@ body::before {
       .message.error {
         color: var(--danger);
       }
+          .display-wrapper {
+      min-height: 100vh;
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+      box-sizing: border-box;
+
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;      /* take full width on mobile */
+      justify-content: flex-start;
+      gap: 24px;
+    }
+
+    /* Logo */
+    .display-wrapper img {
+      max-width: 200px;
+      height: auto;
+      display: block;
+      margin: 0 auto 24px;       /* centered logo, gap below */
+    }
+
+    /* On wider screens, vertically center the whole block nicely */
+    @media (min-width: 900px) {
+      .display-wrapper {
+        justify-content: center;
+      }
+    }
 
       .message.success {
         color: #4ade80;
@@ -500,62 +535,59 @@ body::before {
     </style>
   </head>
   <body>
-    <div class="app-shell">
-      <header class="top-bar">
-        <div>
-          <div class="title">
-            Dot Poll
-            <span class="dot-stack" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
+    <div class="display-wrapper">
+      <img src="https://uploads-ssl.webflow.com/606c7f898c7bf40f036dea63/606c7f898c7bf478f66dea7c_hero-feature-logo-tristam.png"></img>
+      <div class="app-shell">
+        <header class="top-bar">
+          <div>
+            <div class="title">
+              Sample Challenge
+              
+            </div>
+            <div class="subtitle">You have 5 dots. Max 3 per contestant.</div>
           </div>
-          <div class="subtitle">You have 5 dots. Max 3 per contestant.</div>
-        </div>
-        <a href="admin.html" class="admin-link">Admin</a>
-      </header>
+      <!--     <a href="admin.html" class="admin-link">Admin</a> -->
+        </header>
 
-      <main class="layout-main">
-        <section class="panel">
-          <div class="panel-inner">
-            <div class="contestant-grid" id="contestant-grid"></div>
+        <main class="layout-main">
+          <section class="panel">
+            <div class="panel-inner">
+              <div class="contestant-grid" id="contestant-grid"></div>
 
-            <div class="summary-row">
-              <div class="summary-label">
-                Tap + to place a vote. You can stack up to
-                <span class="summary-strong">3 dots</span> on any one bubble.
-              </div>
-              <div class="summary-label">
-                Total used:
-                <span class="summary-strong" id="total-used">0</span>
-                /
-                <span class="summary-strong">5</span>
+              <div class="summary-row">
+                <div class="summary-label">
+                  Tap + to place a vote. You can stack up to
+                  <span class="summary-strong">3 dots</span> on any one bubble.
+                </div>
+                <div class="summary-label">
+                  Total used:
+                  <span class="summary-strong" id="total-used">0</span>
+                  /
+                  <span class="summary-strong">5</span>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="bottom-bar">
-          <div class="bottom-panel">
-            <div class="votes-remaining">
-              <div class="votes-remaining-label">Remaining votes</div>
-              <div class="votes-remaining-count">
-                <span id="votes-left">5</span>
-                / 5
+          <section class="bottom-bar">
+            <div class="bottom-panel">
+              <div class="votes-remaining">
+                <div class="votes-remaining-label">Remaining votes</div>
+                <div class="votes-remaining-count">
+                  <span id="votes-left">5</span>
+                  / 5
+                </div>
               </div>
+              <div class="vote-spheres" id="vote-spheres" aria-hidden="true"></div>
+              <button class="primary-button" id="submit-btn" type="button">
+                <span class="icon"></span>
+                Submit votes
+              </button>
             </div>
-            <div class="vote-spheres" id="vote-spheres" aria-hidden="true"></div>
-            <button class="primary-button" id="submit-btn" type="button">
-              <span class="icon"></span>
-              Submit votes
-            </button>
-          </div>
-          <div class="message" id="message" aria-live="polite"></div>
-        </section>
-      </main>
+            <div class="message" id="message" aria-live="polite"></div>
+          </section>
+        </main>
+    </div>
     </div>
 
     <script src="/main.js" defer></script>
