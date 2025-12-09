@@ -328,7 +328,7 @@
       </div>
     </div>
 
-    <script>
+        <script>
       (function () {
         // 🔐 CHANGE THIS TO WHATEVER YOU WANT
         const ADMIN_TOKEN = "admin123";
@@ -351,13 +351,23 @@
           unlock();
         }
 
-        authForm.addEventListener("submit", function (e) {
+        authForm.addEventListener("submit", async function (e) {
           e.preventDefault();
+
           const val = authInput.value.trim();
           if (!val) return;
 
-          if (val === ADMIN_TOKEN) {
-            localStorage.setItem(STORAGE_KEY, ADMIN_TOKEN);
+          const res = await fetch("/api/admin-auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: val })
+          });
+
+          const data = await res.json();
+
+          if (data.ok) {
+            // token correct!
+            localStorage.setItem(STORAGE_KEY, "yes");
             authError.textContent = "";
             unlock();
           } else {
@@ -366,6 +376,7 @@
             authInput.focus();
           }
         });
+
 
         // ---- existing admin logic below ----
         const listEl = document.getElementById("list");
@@ -466,14 +477,14 @@
             const removeBtn = div.querySelector("button.danger-button");
             removeBtn.addEventListener("click", async () => {
               const confirmed = confirm(
-                \`Remove "${c.name}" and all of its votes?\`
+                `Remove "${c.name}" and all of its votes?`
               );
               if (!confirmed) return;
 
               try {
                 setMessage("", null);
                 await removeContestant(c.id);
-                setMessage(\`Removed "${c.name}".\`, "success");
+                setMessage(`Removed "${c.name}".`, "success");
                 await render(); // reload from server
               } catch (err) {
                 setMessage(err.message, "error");
@@ -520,7 +531,7 @@
           try {
             setMessage("", null);
             await addContestant(name, subtitle);
-            setMessage(\`Added "${name}".\`, "success");
+            setMessage(`Added "${name}".`, "success");
             nameInput.value = "";
             subtitleInput.value = "";
             await render();
@@ -558,5 +569,6 @@
         });
       })();
     </script>
+
   </body>
 </html>
