@@ -328,257 +328,253 @@
       </div>
     </div>
 
-        <script>
-      (function () {
-        // 🔐 CHANGE THIS TO WHATEVER YOU WANT
-        const ADMIN_TOKEN = "admin123";
-        const STORAGE_KEY = "dotpoll-admin-token-v1";
+      <script>
+  (function () {
+    // Just a flag, NOT the token
+    const STORAGE_KEY = "dotpoll-admin-authed-v1";
 
-        const authSection = document.getElementById("auth-section");
-        const adminSection = document.getElementById("admin-section");
-        const authForm = document.getElementById("auth-form");
-        const authInput = document.getElementById("auth-token-input");
-        const authError = document.getElementById("auth-error");
+    const authSection = document.getElementById("auth-section");
+    const adminSection = document.getElementById("admin-section");
+    const authForm = document.getElementById("auth-form");
+    const authInput = document.getElementById("auth-token-input");
+    const authError = document.getElementById("auth-error");
 
-        function unlock() {
-          authSection.style.display = "none";
-          adminSection.hidden = false;
-        }
-
-        // Auto-unlock if token was already stored
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored && stored === ADMIN_TOKEN) {
-          unlock();
-        }
-
-        const STORAGE_KEY = "dotpoll-admin-authed-v1";
-
-authForm.addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const val = authInput.value.trim();
-  if (!val) return;
-
-  try {
-    authError.textContent = "";
-
-    const res = await fetch("/api/admin-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: val })
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok || !data.ok) {
-      authError.textContent = data.error || "Invalid admin token.";
-      authInput.value = "";
-      authInput.focus();
-      return;
+    function unlock() {
+      authSection.style.display = "none";
+      adminSection.hidden = false;
     }
 
-    // success
-    localStorage.setItem(STORAGE_KEY, "1");
-    authError.textContent = "";
-    unlock();
-  } catch (err) {
-    console.error(err);
-    authError.textContent = "Auth failed. Please try again.";
-  }
-});
+    // Auto-unlock if already authenticated
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "1") {
+      unlock();
+    }
 
+    authForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const val = authInput.value.trim();
+      if (!val) return;
 
+      try {
+        authError.textContent = "";
 
-        // ---- existing admin logic below ----
-        const listEl = document.getElementById("list");
-        const formEl = document.getElementById("add-form");
-        const nameInput = document.getElementById("name-input");
-        const subtitleInput = document.getElementById("subtitle-input");
-        const messageEl = document.getElementById("message");
-        const flushIpsBtn = document.getElementById("flush-ips");
-        const flushAllBtn = document.getElementById("flush-all");
+        const res = await fetch("/api/admin-auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: val })
+        });
 
-        function setMessage(text, kind) {
-          messageEl.textContent = text || "";
-          messageEl.classList.remove("error", "success");
-          if (kind === "error") messageEl.classList.add("error");
-          if (kind === "success") messageEl.classList.add("success");
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+          authError.textContent = data.error || "Invalid admin token.";
+          authInput.value = "";
+          authInput.focus();
+          return;
         }
 
-        async function fetchState() {
-          const res = await fetch("/api/state", {
-            headers: { "Cache-Control": "no-store" }
-          });
-          if (!res.ok) throw new Error("Failed to load state from server.");
-          return res.json();
-        }
+        // success
+        localStorage.setItem(STORAGE_KEY, "1");
+        authError.textContent = "";
+        unlock();
+      } catch (err) {
+        console.error(err);
+        authError.textContent = "Auth failed. Please try again.";
+      }
+    });
 
-        async function addContestant(name, subtitle) {
-          const res = await fetch("/api/admin-contestants", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, subtitle })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.ok) {
-            throw new Error(data.error || "Failed to add contestant.");
-          }
-          return data;
-        }
+    // ---- existing admin logic below ----
+    const listEl = document.getElementById("list");
+    const formEl = document.getElementById("add-form");
+    const nameInput = document.getElementById("name-input");
+    const subtitleInput = document.getElementById("subtitle-input");
+    const messageEl = document.getElementById("message");
+    const flushIpsBtn = document.getElementById("flush-ips");
+    const flushAllBtn = document.getElementById("flush-all");
 
-        async function removeContestant(id) {
-          const res = await fetch("/api/admin-contestants", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.ok) {
-            throw new Error(data.error || "Failed to remove contestant.");
-          }
-          return data;
-        }
+    function setMessage(text, kind) {
+      messageEl.textContent = text || "";
+      messageEl.classList.remove("error", "success");
+      if (kind === "error") messageEl.classList.add("error");
+      if (kind === "success") messageEl.classList.add("success");
+    }
 
-        async function adminReset(action) {
-          const res = await fetch("/api/admin-reset", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.ok) {
-            throw new Error(data.error || "Reset failed.");
-          }
-          return data;
-        }
+    async function fetchState() {
+      const res = await fetch("/api/state", {
+        headers: { "Cache-Control": "no-store" }
+      });
+      if (!res.ok) throw new Error("Failed to load state from server.");
+      return res.json();
+    }
 
-        function renderFromState(state) {
-          const { contestants = [], totals = {} } = state || {};
-          listEl.innerHTML = "";
+    async function addContestant(name, subtitle) {
+      const res = await fetch("/api/admin-contestants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, subtitle })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Failed to add contestant.");
+      }
+      return data;
+    }
 
-          if (!contestants.length) {
-            const div = document.createElement("div");
-            div.className = "item";
-            div.innerHTML = `
-              <div class="item-main">
-                <div class="item-name">No contestants yet.</div>
-                <div class="item-sub">Add some above and they will appear on the voting page.</div>
-              </div>
-            `;
-            listEl.appendChild(div);
-            return;
-          }
+    async function removeContestant(id) {
+      const res = await fetch("/api/admin-contestants", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Failed to remove contestant.");
+      }
+      return data;
+    }
 
-          contestants.forEach((c) => {
-            const div = document.createElement("div");
-            div.className = "item";
-            const total = totals[c.id] || 0;
+    async function adminReset(action) {
+      const res = await fetch("/api/admin-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Reset failed.");
+      }
+      return data;
+    }
 
-            div.innerHTML = `
-              <div class="item-main">
-                <div class="item-name">${c.name}</div>
-                <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
-              </div>
-              <div class="item-meta">
-                <span class="badge">Total votes: ${total}</span>
-                <button class="danger-button" type="button">Remove</button>
-              </div>
-            `;
+    function renderFromState(state) {
+      const { contestants = [], totals = {} } = state || {};
+      listEl.innerHTML = "";
 
-            const removeBtn = div.querySelector("button.danger-button");
-            removeBtn.addEventListener("click", async () => {
-              const confirmed = confirm(
-                `Remove "${c.name}" and all of its votes?`
-              );
-              if (!confirmed) return;
+      if (!contestants.length) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <div class="item-main">
+            <div class="item-name">No contestants yet.</div>
+            <div class="item-sub">Add some above and they will appear on the voting page.</div>
+          </div>
+        `;
+        listEl.appendChild(div);
+        return;
+      }
 
-              try {
-                setMessage("", null);
-                await removeContestant(c.id);
-                setMessage(`Removed "${c.name}".`, "success");
-                await render(); // reload from server
-              } catch (err) {
-                setMessage(err.message, "error");
-              }
-            });
+      contestants.forEach((c) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        const total = totals[c.id] || 0;
 
-            listEl.appendChild(div);
-          });
-        }
+        div.innerHTML = `
+          <div class="item-main">
+            <div class="item-name">${c.name}</div>
+            <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
+          </div>
+          <div class="item-meta">
+            <span class="badge">Total votes: ${total}</span>
+            <button class="danger-button" type="button">Remove</button>
+          </div>
+        `;
 
-        async function render() {
+        const removeBtn = div.querySelector("button.danger-button");
+        removeBtn.addEventListener("click", async () => {
+          const confirmed = confirm(
+            `Remove "${c.name}" and all of its votes?`
+          );
+          if (!confirmed) return;
+
           try {
-            const state = await fetchState();
-            renderFromState(state);
+            setMessage("", null);
+            await removeContestant(c.id);
+            setMessage(`Removed "${c.name}".`, "success");
+            await render(); // reload from server
           } catch (err) {
-            console.error(err);
             setMessage(err.message, "error");
           }
-        }
+        });
 
-        if (adminSection.hidden === false) {
+        listEl.appendChild(div);
+      });
+    }
+
+    async function render() {
+      try {
+        const state = await fetchState();
+        renderFromState(state);
+      } catch (err) {
+        console.error(err);
+        setMessage(err.message, "error");
+      }
+    }
+
+    if (adminSection.hidden === false) {
+      render();
+    } else {
+      // when unlocked later, load state once
+      const observer = new MutationObserver(() => {
+        if (!adminSection.hidden) {
           render();
-        } else {
-          // when unlocked later, load state once
-          const observer = new MutationObserver(() => {
-            if (!adminSection.hidden) {
-              render();
-              observer.disconnect();
-            }
-          });
-          observer.observe(adminSection, { attributes: true, attributeFilter: ["hidden"] });
+          observer.disconnect();
         }
+      });
+      observer.observe(adminSection, { attributes: true, attributeFilter: ["hidden"] });
+    }
 
-        formEl.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const name = nameInput.value.trim();
-          const subtitle = subtitleInput.value.trim();
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      const subtitle = subtitleInput.value.trim();
 
-          if (!name) {
-            setMessage("Name is required.", "error");
-            return;
-          }
+      if (!name) {
+        setMessage("Name is required.", "error");
+        return;
+      }
 
-          try {
-            setMessage("", null);
-            await addContestant(name, subtitle);
-            setMessage(`Added "${name}".`, "success");
-            nameInput.value = "";
-            subtitleInput.value = "";
-            await render();
-          } catch (err) {
-            setMessage(err.message, "error");
-          }
-        });
+      try {
+        setMessage("", null);
+        await addContestant(name, subtitle);
+        setMessage(`Added "${name}".`, "success");
+        nameInput.value = "";
+        subtitleInput.value = "";
+        await render();
+      } catch (err) {
+        setMessage(err.message, "error");
+      }
+    });
 
-        flushIpsBtn.addEventListener("click", async () => {
-          try {
-            setMessage("", null);
-            await adminReset("flushIps");
-            setMessage(
-              "All voter IPs have been cleared. Old users can vote again.",
-              "success"
-            );
-          } catch (err) {
-            setMessage(err.message, "error");
-          }
-        });
+    flushIpsBtn.addEventListener("click", async () => {
+      try {
+        setMessage("", null);
+        await adminReset("flushIps");
+        setMessage(
+          "All voter IPs have been cleared. Old users can vote again.",
+          "success"
+        );
+      } catch (err) {
+        setMessage(err.message, "error");
+      }
+    });
 
-        flushAllBtn.addEventListener("click", async () => {
-          if (
-            !confirm("Flush ALL contestants and votes? This cannot be undone.")
-          )
-            return;
-          try {
-            setMessage("", null);
-            await adminReset("flushAll");
-            setMessage("All contestants & votes have been cleared.", "success");
-            await render();
-          } catch (err) {
-            setMessage(err.message, "error");
-          }
-        });
-      })();
-    </script>
+    flushAllBtn.addEventListener("click", async () => {
+      if (
+        !confirm("Flush ALL contestants and votes? This cannot be undone.")
+      )
+        return;
+      try {
+        setMessage("", null);
+        await adminReset("flushAll");
+        setMessage("All contestants & votes have been cleared.", "success");
+        await render();
+      } catch (err) {
+        setMessage(err.message, "error");
+      }
+    });
+  })();
+</script>
+
 
   </body>
 </html>

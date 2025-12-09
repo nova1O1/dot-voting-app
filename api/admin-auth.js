@@ -6,18 +6,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // For Vercel Node functions in older runtime, body may not be parsed automatically:
-    const body =
-      typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+    // Body may be string or already parsed:
+    let body = req.body || {};
+    if (typeof body === "string") {
+      body = JSON.parse(body || "{}");
+    }
+
     const token = body.token;
 
-    const real = process.env.ADMIN_TOKEN;
-
-    if (!real) {
-      return res
-        .status(500)
-        .json({ ok: false, error: "Server misconfigured (no ADMIN_TOKEN)" });
-    }
+    // Fallback to "admin123" locally if env not set:
+    const real = process.env.ADMIN_TOKEN || "admin123";
 
     if (!token) {
       return res
@@ -32,9 +30,8 @@ export default async function handler(req, res) {
     return res
       .status(401)
       .json({ ok: false, error: "Invalid admin token" });
-
   } catch (err) {
-    console.error(err);
+    console.error("admin-auth error", err);
     return res
       .status(400)
       .json({ ok: false, error: "Bad request" });
