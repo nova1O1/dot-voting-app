@@ -328,10 +328,11 @@
       </div>
     </div>
 
-      <script>
+   <script>
   (function () {
-    // Just a flag, NOT the token
-    const STORAGE_KEY = "dotpoll-admin-authed-v1";
+    // We'll store the actual token so we can send it to admin APIs
+    const STORAGE_KEY = "dotpoll-admin-token-v1";
+    let adminToken = null;
 
     const authSection = document.getElementById("auth-section");
     const adminSection = document.getElementById("admin-section");
@@ -344,9 +345,19 @@
       adminSection.hidden = false;
     }
 
-    // Auto-unlock if already authenticated
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "1") {
+    // Helper: include admin token header if we have it
+    function withAdminHeaders(base) {
+      const headers = { ...(base || {}) };
+      if (adminToken) {
+        headers["x-admin-token"] = adminToken;
+      }
+      return headers;
+    }
+
+    // Auto-unlock if we have a stored token
+    const storedToken = localStorage.getItem(STORAGE_KEY);
+    if (storedToken) {
+      adminToken = storedToken;
       unlock();
     }
 
@@ -373,8 +384,9 @@
           return;
         }
 
-        // success
-        localStorage.setItem(STORAGE_KEY, "1");
+        // success: remember token and unlock
+        adminToken = val;
+        localStorage.setItem(STORAGE_KEY, val);
         authError.textContent = "";
         unlock();
       } catch (err) {
@@ -401,7 +413,8 @@
 
     async function fetchState() {
       const res = await fetch("/api/state", {
-        headers: { "Cache-Control": "no-store" }
+        method: "GET",
+        headers: withAdminHeaders({ "Cache-Control": "no-store" })
       });
       if (!res.ok) throw new Error("Failed to load state from server.");
       return res.json();
@@ -410,7 +423,7 @@
     async function addContestant(name, subtitle) {
       const res = await fetch("/api/admin-contestants", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: withAdminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ name, subtitle })
       });
       const data = await res.json().catch(() => ({}));
@@ -423,7 +436,7 @@
     async function removeContestant(id) {
       const res = await fetch("/api/admin-contestants", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: withAdminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id })
       });
       const data = await res.json().catch(() => ({}));
@@ -436,7 +449,7 @@
     async function adminReset(action) {
       const res = await fetch("/api/admin-reset", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: withAdminHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action })
       });
       const data = await res.json().catch(() => ({}));
@@ -520,7 +533,10 @@
           observer.disconnect();
         }
       });
-      observer.observe(adminSection, { attributes: true, attributeFilter: ["hidden"] });
+      observer.observe(adminSection, {
+        attributes: true,
+        attributeFilter: ["hidden"]
+      });
     }
 
     formEl.addEventListener("submit", async (e) => {
@@ -559,10 +575,9 @@
     });
 
     flushAllBtn.addEventListener("click", async () => {
-      if (
-        !confirm("Flush ALL contestants and votes? This cannot be undone.")
-      )
+      if (!confirm("Flush ALL contestants and votes? This cannot be undone.")) {
         return;
+      }
       try {
         setMessage("", null);
         await adminReset("flushAll");
@@ -574,6 +589,7 @@
     });
   })();
 </script>
+
 
 
   </body>
