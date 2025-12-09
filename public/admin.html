@@ -1,230 +1,562 @@
-<script>
-  (function () {
-    const listEl = document.getElementById("list");
-    const formEl = document.getElementById("add-form");
-    const nameInput = document.getElementById("name-input");
-    const subtitleInput = document.getElementById("subtitle-input");
-    const messageEl = document.getElementById("message");
-    const flushIpsBtn = document.getElementById("flush-ips");
-    const flushAllBtn = document.getElementById("flush-all");
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dot Poll – Admin</title>
+    <style>
+      :root {
+        --bg: radial-gradient(circle at top, #354661 0, #0d0c12 55%);
+        --glass-bg: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.18),
+          rgba(255, 255, 255, 0.05)
+        );
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --danger: #fb7185;
+      }
 
-    const ADMIN_TOKEN_KEY = "dotpoll-admin-token";
+      * {
+        box-sizing: border-box;
+      }
 
-    function setMessage(text, kind) {
-      messageEl.textContent = text || "";
-      messageEl.classList.remove("error", "success");
-      if (kind === "error") messageEl.classList.add("error");
-      if (kind === "success") messageEl.classList.add("success");
-    }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          sans-serif;
+        color: var(--text-main);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-    function getAdminToken() {
-      let token = localStorage.getItem(ADMIN_TOKEN_KEY);
-      if (!token) {
-        token = window.prompt("Enter admin token:");
-        if (!token) {
-          setMessage("Admin token is required to use this page.", "error");
-          throw new Error("No admin token");
+      .shell {
+        width: 100%;
+        max-width: 840px;
+        padding: 24px 16px 32px;
+      }
+
+      .panel {
+        border-radius: 24px;
+        padding: 18px 16px 18px;
+        background: var(--glass-bg);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+      }
+
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .title {
+        font-size: 1.4rem;
+        letter-spacing: -0.03em;
+        font-weight: 650;
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+
+      .nav-link {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+      }
+
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .field {
+        flex: 1 1 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      input {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text-main);
+        outline: none;
+      }
+
+      input:focus {
+        border-color: rgba(56, 189, 248, 0.8);
+      }
+
+      .primary-button {
+        border-radius: 999px;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: #0f172a;
+        background: linear-gradient(135deg, #f9fafb, #e0f2fe);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
+        white-space: nowrap;
+      }
+
+      .primary-button:disabled {
+        opacity: 0.6;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .list {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 360px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .item {
+        border-radius: 18px;
+        padding: 8px 10px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .item-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .item-sub {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      .item-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .badge {
+        font-size: 0.78rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.8);
+        background: rgba(15, 23, 42, 0.9);
+      }
+
+      .danger-button {
+        border-radius: 999px;
+        border: none;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        background: rgba(248, 113, 113, 0.18);
+        color: var(--danger);
+        border: 1px solid rgba(248, 113, 113, 0.7);
+      }
+
+      .message {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        min-height: 1.1em;
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .message.success {
+        color: #4ade80;
+      }
+
+      /* --- Auth section styles --- */
+      #auth-section {
+        margin-bottom: 16px;
+        border-radius: 18px;
+        padding: 12px 12px 14px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.6);
+      }
+
+      #auth-section h2 {
+        margin: 0 0 6px;
+        font-size: 1rem;
+      }
+
+      #auth-section p {
+        margin: 0 0 10px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      #auth-section .auth-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      #auth-section input {
+        flex: 1 1 200px;
+      }
+
+      #auth-error {
+        margin-top: 6px;
+        font-size: 0.78rem;
+        color: var(--danger);
+        min-height: 1em;
+      }
+
+      #admin-section[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="panel">
+        <div class="top-row">
+          <div class="title">Dot Poll · Admin</div>
+          <a href="index.html" class="nav-link">Back to voting</a>
+        </div>
+        <div class="subtitle">
+          Manage contestants and see the total votes that have been submitted
+          from the public voting page.
+        </div>
+
+        <!-- AUTH GATE -->
+        <section id="auth-section">
+          <h2>Admin access</h2>
+          <p>Enter the admin token to unlock this dashboard.</p>
+          <form id="auth-form" class="auth-row" autocomplete="off">
+            <input
+              id="auth-token-input"
+              type="password"
+              placeholder="Admin token"
+              required
+            />
+            <button class="primary-button" type="submit">Unlock</button>
+          </form>
+          <div id="auth-error"></div>
+        </section>
+
+        <!-- REAL ADMIN UI (hidden until authed) -->
+        <section id="admin-section" hidden>
+          <form id="add-form" class="form-row" autocomplete="off">
+            <div class="field">
+              <label for="name-input">Contestant name</label>
+              <input
+                id="name-input"
+                type="text"
+                placeholder="e.g. Team Aurora"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="subtitle-input">Subtitle (optional)</label>
+              <input
+                id="subtitle-input"
+                type="text"
+                placeholder="e.g. Concept A"
+              />
+            </div>
+            <div class="field" style="flex:0 0 auto; align-self:flex-end;">
+              <button class="primary-button" type="submit">
+                <span>＋</span> Add contestant
+              </button>
+            </div>
+          </form>
+
+          <div class="form-row" style="margin-bottom: 8px;">
+            <button class="danger-button" type="button" id="flush-ips">
+              Flush IPs (allow re-vote)
+            </button>
+            <button class="danger-button" type="button" id="flush-all">
+              Flush ALL (contestants & votes)
+            </button>
+          </div>
+
+          <div id="message" class="message"></div>
+          <div id="list" class="list"></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        // 🔐 CHANGE THIS TO WHATEVER YOU WANT
+        const ADMIN_TOKEN = "admin123";
+        const STORAGE_KEY = "dotpoll-admin-token-v1";
+
+        const authSection = document.getElementById("auth-section");
+        const adminSection = document.getElementById("admin-section");
+        const authForm = document.getElementById("auth-form");
+        const authInput = document.getElementById("auth-token-input");
+        const authError = document.getElementById("auth-error");
+
+        function unlock() {
+          authSection.style.display = "none";
+          adminSection.hidden = false;
         }
-        localStorage.setItem(ADMIN_TOKEN_KEY, token);
-      }
-      return token;
-    }
 
-    function clearAdminToken() {
-      localStorage.removeItem(ADMIN_TOKEN_KEY);
-    }
+        // Auto-unlock if token was already stored
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored && stored === ADMIN_TOKEN) {
+          unlock();
+        }
 
-    async function fetchState() {
-      const res = await fetch("/api/state", {
-        headers: { "Cache-Control": "no-store" }
-      });
-      if (!res.ok) throw new Error("Failed to load state from server.");
-      return res.json();
-    }
+        authForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const val = authInput.value.trim();
+          if (!val) return;
 
-    async function addContestant(name, subtitle) {
-      const token = getAdminToken();
-      const res = await fetch("/api/admin-contestants", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-token": token,
-        },
-        body: JSON.stringify({ name, subtitle }),
-      });
+          if (val === ADMIN_TOKEN) {
+            localStorage.setItem(STORAGE_KEY, ADMIN_TOKEN);
+            authError.textContent = "";
+            unlock();
+          } else {
+            authError.textContent = "Invalid admin token.";
+            authInput.value = "";
+            authInput.focus();
+          }
+        });
 
-      if (res.status === 401) {
-        clearAdminToken();
-        throw new Error("Invalid admin token.");
-      }
+        // ---- existing admin logic below ----
+        const listEl = document.getElementById("list");
+        const formEl = document.getElementById("add-form");
+        const nameInput = document.getElementById("name-input");
+        const subtitleInput = document.getElementById("subtitle-input");
+        const messageEl = document.getElementById("message");
+        const flushIpsBtn = document.getElementById("flush-ips");
+        const flushAllBtn = document.getElementById("flush-all");
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Failed to add contestant.");
-      }
-      return data;
-    }
+        function setMessage(text, kind) {
+          messageEl.textContent = text || "";
+          messageEl.classList.remove("error", "success");
+          if (kind === "error") messageEl.classList.add("error");
+          if (kind === "success") messageEl.classList.add("success");
+        }
 
-    async function removeContestant(id) {
-      const token = getAdminToken();
-      const res = await fetch("/api/admin-contestants", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-token": token,
-        },
-        body: JSON.stringify({ id }),
-      });
+        async function fetchState() {
+          const res = await fetch("/api/state", {
+            headers: { "Cache-Control": "no-store" }
+          });
+          if (!res.ok) throw new Error("Failed to load state from server.");
+          return res.json();
+        }
 
-      if (res.status === 401) {
-        clearAdminToken();
-        throw new Error("Invalid admin token.");
-      }
+        async function addContestant(name, subtitle) {
+          const res = await fetch("/api/admin-contestants", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, subtitle })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Failed to add contestant.");
+          }
+          return data;
+        }
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Failed to remove contestant.");
-      }
-      return data;
-    }
+        async function removeContestant(id) {
+          const res = await fetch("/api/admin-contestants", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Failed to remove contestant.");
+          }
+          return data;
+        }
 
-    async function adminReset(action) {
-      const token = getAdminToken();
-      const res = await fetch("/api/admin-reset", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-token": token,
-        },
-        body: JSON.stringify({ action }),
-      });
+        async function adminReset(action) {
+          const res = await fetch("/api/admin-reset", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Reset failed.");
+          }
+          return data;
+        }
 
-      if (res.status === 401) {
-        clearAdminToken();
-        throw new Error("Invalid admin token.");
-      }
+        function renderFromState(state) {
+          const { contestants = [], totals = {} } = state || {};
+          listEl.innerHTML = "";
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Reset failed.");
-      }
-      return data;
-    }
+          if (!contestants.length) {
+            const div = document.createElement("div");
+            div.className = "item";
+            div.innerHTML = `
+              <div class="item-main">
+                <div class="item-name">No contestants yet.</div>
+                <div class="item-sub">Add some above and they will appear on the voting page.</div>
+              </div>
+            `;
+            listEl.appendChild(div);
+            return;
+          }
 
-    function renderFromState(state) {
-      const { contestants = [], totals = {} } = state || {};
-      listEl.innerHTML = "";
+          contestants.forEach((c) => {
+            const div = document.createElement("div");
+            div.className = "item";
+            const total = totals[c.id] || 0;
 
-      if (!contestants.length) {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <div class="item-main">
-            <div class="item-name">No contestants yet.</div>
-            <div class="item-sub">Add some above and they will appear on the voting page.</div>
-          </div>
-        `;
-        listEl.appendChild(div);
-        return;
-      }
+            div.innerHTML = `
+              <div class="item-main">
+                <div class="item-name">${c.name}</div>
+                <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
+              </div>
+              <div class="item-meta">
+                <span class="badge">Total votes: ${total}</span>
+                <button class="danger-button" type="button">Remove</button>
+              </div>
+            `;
 
-      // sort by votes desc
-      const sorted = [...contestants].sort(
-        (a, b) => (totals[b.id] || 0) - (totals[a.id] || 0)
-      );
+            const removeBtn = div.querySelector("button.danger-button");
+            removeBtn.addEventListener("click", async () => {
+              const confirmed = confirm(
+                \`Remove "${c.name}" and all of its votes?\`
+              );
+              if (!confirmed) return;
 
-      sorted.forEach((c) => {
-        const div = document.createElement("div");
-        div.className = "item";
-        const total = totals[c.id] || 0;
+              try {
+                setMessage("", null);
+                await removeContestant(c.id);
+                setMessage(\`Removed "${c.name}".\`, "success");
+                await render(); // reload from server
+              } catch (err) {
+                setMessage(err.message, "error");
+              }
+            });
 
-        div.innerHTML = `
-          <div class="item-main">
-            <div class="item-name">${c.name}</div>
-            <div class="item-sub">${c.subtitle || "&nbsp;"}</div>
-          </div>
-          <div class="item-meta">
-            <span class="badge">Total votes: ${total}</span>
-            <button class="danger-button" type="button">Remove</button>
-          </div>
-        `;
+            listEl.appendChild(div);
+          });
+        }
 
-        const removeBtn = div.querySelector("button.danger-button");
-        removeBtn.addEventListener("click", async () => {
-          const confirmed = confirm(
-            \`Remove "\${c.name}" and all of its votes?\`
-          );
-          if (!confirmed) return;
+        async function render() {
+          try {
+            const state = await fetchState();
+            renderFromState(state);
+          } catch (err) {
+            console.error(err);
+            setMessage(err.message, "error");
+          }
+        }
+
+        if (adminSection.hidden === false) {
+          render();
+        } else {
+          // when unlocked later, load state once
+          const observer = new MutationObserver(() => {
+            if (!adminSection.hidden) {
+              render();
+              observer.disconnect();
+            }
+          });
+          observer.observe(adminSection, { attributes: true, attributeFilter: ["hidden"] });
+        }
+
+        formEl.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const name = nameInput.value.trim();
+          const subtitle = subtitleInput.value.trim();
+
+          if (!name) {
+            setMessage("Name is required.", "error");
+            return;
+          }
 
           try {
             setMessage("", null);
-            await removeContestant(c.id);
-            setMessage(\`Removed "\${c.name}".\`, "success");
-            await render(); // reload from server
+            await addContestant(name, subtitle);
+            setMessage(\`Added "${name}".\`, "success");
+            nameInput.value = "";
+            subtitleInput.value = "";
+            await render();
           } catch (err) {
             setMessage(err.message, "error");
           }
         });
 
-        listEl.appendChild(div);
-      });
-    }
+        flushIpsBtn.addEventListener("click", async () => {
+          try {
+            setMessage("", null);
+            await adminReset("flushIps");
+            setMessage(
+              "All voter IPs have been cleared. Old users can vote again.",
+              "success"
+            );
+          } catch (err) {
+            setMessage(err.message, "error");
+          }
+        });
 
-    async function render() {
-      try {
-        const state = await fetchState();
-        renderFromState(state);
-      } catch (err) {
-        console.error(err);
-        setMessage(err.message, "error");
-      }
-    }
-
-    formEl.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = nameInput.value.trim();
-      const subtitle = subtitleInput.value.trim();
-
-      if (!name) {
-        setMessage("Name is required.", "error");
-        return;
-      }
-
-      try {
-        setMessage("", null);
-        await addContestant(name, subtitle);
-        setMessage(\`Added "\${name}".\`, "success");
-        nameInput.value = "";
-        subtitleInput.value = "";
-        await render();
-      } catch (err) {
-        setMessage(err.message, "error");
-      }
-    });
-
-    flushIpsBtn.addEventListener("click", async () => {
-      try {
-        setMessage("", null);
-        await adminReset("flushIps");
-        setMessage("All voter IPs have been cleared. Old users can vote again.", "success");
-      } catch (err) {
-        setMessage(err.message, "error");
-      }
-    });
-
-    flushAllBtn.addEventListener("click", async () => {
-      if (!confirm("Flush ALL contestants and votes? This cannot be undone.")) return;
-      try {
-        setMessage("", null);
-        await adminReset("flushAll");
-        setMessage("All contestants & votes have been cleared.", "success");
-        await render();
-      } catch (err) {
-        setMessage(err.message, "error");
-      }
-    });
-
-    // initial render (public state)
-    render();
-  })();
-</script>
+        flushAllBtn.addEventListener("click", async () => {
+          if (
+            !confirm("Flush ALL contestants and votes? This cannot be undone.")
+          )
+            return;
+          try {
+            setMessage("", null);
+            await adminReset("flushAll");
+            setMessage("All contestants & votes have been cleared.", "success");
+            await render();
+          } catch (err) {
+            setMessage(err.message, "error");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
