@@ -351,31 +351,41 @@
           unlock();
         }
 
-        authForm.addEventListener("submit", async function (e) {
-          e.preventDefault();
+        const STORAGE_KEY = "dotpoll-admin-authed-v1";
 
-          const val = authInput.value.trim();
-          if (!val) return;
+authForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const val = authInput.value.trim();
+  if (!val) return;
 
-          const res = await fetch("/api/admin-auth", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: val })
-          });
+  try {
+    authError.textContent = "";
 
-          const data = await res.json();
+    const res = await fetch("/api/admin-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: val })
+    });
 
-          if (data.ok) {
-            // token correct!
-            localStorage.setItem(STORAGE_KEY, "yes");
-            authError.textContent = "";
-            unlock();
-          } else {
-            authError.textContent = "Invalid admin token.";
-            authInput.value = "";
-            authInput.focus();
-          }
-        });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data.ok) {
+      authError.textContent = data.error || "Invalid admin token.";
+      authInput.value = "";
+      authInput.focus();
+      return;
+    }
+
+    // success
+    localStorage.setItem(STORAGE_KEY, "1");
+    authError.textContent = "";
+    unlock();
+  } catch (err) {
+    console.error(err);
+    authError.textContent = "Auth failed. Please try again.";
+  }
+});
+
 
 
         // ---- existing admin logic below ----
